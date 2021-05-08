@@ -137,6 +137,23 @@ pub const MOVE_DOWN: (i32, i32) = (0, 1);
 /// for 2D representation when called by the user
 ///
 /// The cells are internally manage by a `Vec<T>`
+///
+/// So to create a grid with 4x4 (collums and rows)
+///
+/// ```.rust
+/// let grid = das_grid::Grid::new(4, 4, 0);
+/// assert_eq!(grid.size(), 16);
+/// ```
+///
+/// Or if you like let's say a Tetris style grid
+///
+/// ```.rust
+/// let grid = das_grid::Grid::new(10, 20, 0);
+///
+/// // And it will have 200 cells!
+/// assert_eq!(grid.size(), 200);
+/// ```
+
 pub struct Grid<T: Copy + Clone> {
     pub(crate) width: i32,
     pub(crate) height: i32,
