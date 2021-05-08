@@ -5,7 +5,7 @@ use std::{
     fmt::{self},
 };
 
-use crate::{Grid, MoveDirection, OutOfGridErr};
+use crate::{Grid, GridErr, MoveDirection};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Pawn {
@@ -102,28 +102,28 @@ fn test_move_to() {
     assert!(ret.is_ok());
 
     let ret = g.mov_to((1, 0), MoveDirection::Right);
-    assert!(ret.unwrap_err() == OutOfGridErr);
+    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
 
     let ret = g.mov_to((1, 0), MoveDirection::Left);
     assert!(g.get((0, 0)).unwrap() == &1);
 
     let ret = g.mov_to((0, 0), MoveDirection::Left);
-    assert!(ret.unwrap_err() == OutOfGridErr);
+    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
 
     let ret = g.mov_to((0, 0), MoveDirection::Up);
-    assert!(ret.unwrap_err() == OutOfGridErr);
+    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
 
     let ret = g.mov_to((0, 0), MoveDirection::Down);
     assert!(ret.is_ok());
 
     let ret = g.mov_to((0, 1), MoveDirection::Down);
-    assert!(ret.unwrap_err() == OutOfGridErr);
+    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
 
     let ret = g.mov_to((0, 1), MoveDirection::Right);
     assert!(ret.is_ok());
 
     let ret = g.mov_to((1, 1), MoveDirection::Right);
-    assert!(ret.unwrap_err() == OutOfGridErr);
+    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
 }
 
 #[test]
@@ -147,4 +147,24 @@ fn test_iterators() {
     }
 
     assert!(result == [0, 0, 0, 0]);
+}
+
+#[test]
+fn test_set_with_rules() {
+    let mut grid: Grid<i32> = Grid::new(2, 2, 0);
+    assert!(grid.set((0, 1), &1).is_ok());
+
+    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
+        if *value == 1 {
+            return Err(GridErr::RuleFailed);
+        }
+        Ok(())
+    };
+
+    assert!(
+        grid.set_with_rules((0, 1), &1, vec![rule_not_1])
+            .err()
+            .unwrap()
+            == GridErr::RuleFailed
+    );
 }

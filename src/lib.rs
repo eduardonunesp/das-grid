@@ -73,7 +73,7 @@ if let Ok(()) = g.mov_to((5, 5), das_grid::MoveDirection::Right) {
 
 ```
 
-> The `mov_to` function can returns `Result<(), OutOfGridErr>` if the attept of move is out of the bounds of the grid
+> The `mov_to` function can returns `Result<(), Err>` if the attept of move is out of the bounds of the grid
 
 ### Moving cells
 
@@ -127,14 +127,24 @@ use std::{
     ops::{Index, IndexMut},
 };
 
-/// OutOfGridErr represent the error when the attempt of move or set a value
+/// Err represents the errors that can happen on the Das Grid module
+///
+/// Err::OutOfGrid represent the error when the attempt of move or set a value
 /// is beyond the bounds of grid
+///
+/// Err::RuleFailed represents the error when some rule failed to applied
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OutOfGridErr;
+pub enum GridErr {
+    OutOfGrid,
+    RuleFailed,
+}
 
-impl fmt::Display for OutOfGridErr {
+impl fmt::Display for GridErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "value is out of the grid width and height")
+        match *self {
+            GridErr::OutOfGrid => write!(f, "value is out of the grid width and height"),
+            GridErr::RuleFailed => write!(f, "failed to meet the rule requirements"),
+        }
     }
 }
 
@@ -214,15 +224,15 @@ impl<T: Copy + Clone> Grid<T> {
     }
 
     /// Internally checks if the index (x, y) is inside of the bounds of the grid
-    fn check_grid_bounds(&self, index: (i32, i32)) -> Result<(), OutOfGridErr> {
+    fn check_grid_bounds(&self, index: (i32, i32)) -> Result<(), GridErr> {
         let (x, y) = index;
 
         if x < 0 || x >= self.width {
-            return Err(OutOfGridErr);
+            return Err(GridErr::OutOfGrid);
         }
 
         if y < 0 || y >= self.height {
-            return Err(OutOfGridErr);
+            return Err(GridErr::OutOfGrid);
         }
 
         Ok(())
@@ -231,13 +241,13 @@ impl<T: Copy + Clone> Grid<T> {
     /// Sets a given value to the position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of OutOfGridErr
+    /// with the type of Err::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
     /// assert!(grid.set((0, 0), &1).is_ok());
     /// ```
-    pub fn set(&mut self, index: (i32, i32), value: &T) -> Result<(), OutOfGridErr>
+    pub fn set(&mut self, index: (i32, i32), value: &T) -> Result<(), GridErr>
     where
         T: Copy,
     {
@@ -252,10 +262,47 @@ impl<T: Copy + Clone> Grid<T> {
         Ok(())
     }
 
+    /// Sets a given value to the position (x, y)
+    /// Only if no rule return error
+    ///
+    /// ```.rust
+    /// let mut grid = das_grid::Grid::new(2, 2, 0);
+    /// assert!(grid.set((0, 1), &1).is_ok());
+    ///
+    /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
+    ///     if *value == 1 {
+    ///         return Err(das_grid::GridErr::RuleFailed);
+    ///     }
+    ///     Ok(())
+    /// };
+    ///
+    /// assert!(
+    ///     grid.set_with_rules((0, 1), &1, vec![rule_not_1])
+    ///         .err()
+    ///         .unwrap()
+    ///         == das_grid::GridErr::RuleFailed
+    /// );
+    /// ```
+    pub fn set_with_rules<R>(
+        &mut self,
+        index: (i32, i32),
+        value: &T,
+        rules: Vec<R>,
+    ) -> Result<(), GridErr>
+    where
+        R: Fn((i32, i32), &T) -> Result<(), GridErr>,
+    {
+        for rule in rules.iter() {
+            rule(index, value)?;
+        }
+        self.set(index, value)?;
+        Ok(())
+    }
+
     /// Gets a give value to the position (x, y) as mutable
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of OutOfGridErr
+    /// with the type of Err::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
@@ -263,7 +310,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// *v = 50;
     /// assert_eq!(grid.get((0, 0)).unwrap_or(&0), &50);
     /// ```
-    pub fn get_mut(&mut self, index: (i32, i32)) -> Result<&mut T, OutOfGridErr> {
+    pub fn get_mut(&mut self, index: (i32, i32)) -> Result<&mut T, GridErr> {
         let (x, y) = index;
 
         self.check_grid_bounds(index)?;
@@ -274,14 +321,14 @@ impl<T: Copy + Clone> Grid<T> {
     /// Gets a give value to the position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of OutOfGridErr
+    /// with the type of Err::OutOfGrid
     ///
     /// ```.rust
     /// let grid = das_grid::Grid::new(2, 2, 1);
     /// let v = grid.get((0, 0));
     /// assert_eq!(v, Ok(&1));
     /// ```
-    pub fn get(&self, index: (i32, i32)) -> Result<&T, OutOfGridErr> {
+    pub fn get(&self, index: (i32, i32)) -> Result<&T, GridErr> {
         let (x, y) = index;
 
         self.check_grid_bounds(index)?;
@@ -292,13 +339,13 @@ impl<T: Copy + Clone> Grid<T> {
     /// Moves a given value from position (x, y) to destiny position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of OutOfGridErr
+    /// with the type of Err::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
     /// assert_eq!(grid.mov((0, 0), (1, 1)), Ok(()));
     /// ```
-    pub fn mov(&mut self, index: (i32, i32), dest: (i32, i32)) -> Result<(), OutOfGridErr> {
+    pub fn mov(&mut self, index: (i32, i32), dest: (i32, i32)) -> Result<(), GridErr> {
         self.check_grid_bounds(index)?;
         self.check_grid_bounds(dest)?;
         let prev = *self.get_mut(index).unwrap();
@@ -317,17 +364,13 @@ impl<T: Copy + Clone> Grid<T> {
     /// * DasGrid::MoveDirection::Down, translates to (0, 1)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of OutOfGridErr
+    /// with the type of Err::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
     /// assert_eq!(grid.mov_to((0, 0), das_grid::MoveDirection::Right), Ok(()));
     /// ```
-    pub fn mov_to(
-        &mut self,
-        index: (i32, i32),
-        direction: MoveDirection,
-    ) -> Result<(), OutOfGridErr> {
+    pub fn mov_to(&mut self, index: (i32, i32), direction: MoveDirection) -> Result<(), GridErr> {
         let (x, y) = index;
         self.check_grid_bounds(index)?;
 
