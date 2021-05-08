@@ -148,6 +148,12 @@ impl fmt::Display for GridErr {
     }
 }
 
+/// Represents the possible direction to move
+///
+/// MoveDirection::Right (1, 0)
+/// MoveDirection::Left (-1, 0)
+/// MoveDirection::Up (0, -1)
+/// MoveDirection::Down (0, 1)
 #[derive(Debug, PartialEq, Eq)]
 pub enum MoveDirection {
     Right,
