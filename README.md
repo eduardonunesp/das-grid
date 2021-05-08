@@ -23,7 +23,7 @@ Das Grid offers:
 
 ```rust
 // Creates a 10x10 grid with 0 as default value for each cell
-let mut g = DasGrid::new(10, 10, 0);
+let mut g = das_grid::Grid::new(10, 10, 0);
 
 // Set the the value 1 at position x: 5 and y: 5
 g.set((5, 5), &1);
@@ -33,11 +33,13 @@ g.set((5, 5), &1);
 
 ```rust
 // Using &str instead of i32
-let mut g: Grid<&str> = DasGrid::new(10, 10, "a");
-println!(g.get((0, 0)).unwrap()); // ouputs: "a"
+let mut g: das_grid::Grid<&str> = das_grid::Grid::new(10, 10, "a");
+g.get((0, 0)).unwrap(); // ouputs: "a"
 ```
 
 ```rust
+use std::fmt::Display;
+
 // Your own enum, much better to track grid values
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Pawn {
@@ -46,8 +48,8 @@ enum Pawn {
     Enemy,
 }
 
-impl fmt::Display for Pawn {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for Pawn {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match *self {
             Pawn::None => write!(f, "None"),
             Pawn::Player => write!(f, "Player"),
@@ -57,18 +59,20 @@ impl fmt::Display for Pawn {
 }
 
 // Initialize empty grid
-let mut g: Grid<Pawn> = DasGrid::new(10, 10, Pawn::None);
+let mut g: das_grid::Grid<Pawn> = das_grid::Grid::new(10, 10, Pawn::None);
 
 // Set the Player on position 5,5
 g.set((5, 5), &Pawn::Player);
 
 // Move the player to right
-if let Ok(()) = g.mov_to((5, 5), crate::MoveDirection::Right) {
+if let Ok(()) = g.mov_to((5, 5), das_grid::MoveDirection::Right) {
     // "The pawn on 6,5 is Player"
     println!("The pawn on 6,5 is {}", g.get((6, 5)).unwrap());
 }
 
 ```
+
+> The `mov_to` function can returns `Result<(), OutOfGridErr>` if the attept of move is out of the bounds of the grid
 
 ### Moving cells
 
@@ -76,7 +80,7 @@ Each tile of the grid is called cell and each cell is the type that you want, be
 
 ```rust
 // Creates a 5x5 grid with 0 as default value for each cell
-let mut g = DasGrid::new(5, 5, 0);
+let mut g = das_grid::Grid::new(5, 5, 0);
 
 // Print with special {:?} to see the contents of the grid
 println!("{:?}", g);
@@ -88,46 +92,6 @@ println!("{:?}", g);
 //  0 (x: 0 y: 3) 0 (x: 1 y: 3) 0 (x: 2 y: 3) 0 (x: 3 y: 3) 0 (x: 4 y: 3)
 //  0 (x: 0 y: 4) 0 (x: 1 y: 4) 0 (x: 2 y: 4) 0 (x: 3 y: 4) 0 (x: 4 y: 4)
 // ] }
-```
-
-As explained before to move cells you can call the function `mov_to` and pass the origin and destiny as a direction
-
-The directions can be Left, Right, Top, Down:
-
-* DasGrid::MoveDirection::Left, translates to (-1, 0)
-* DasGrid::MoveDirection::Right, translates to (1, 0)
-* DasGrid::MoveDirection::Top, translates to (0, -1)
-* DasGrid::MoveDirection::Down, translates to (0, 1)
-
-> The `mov_to` function can returns `Result<(), OutOfGridErr>` if the attept of move is out of the bounds of the grid
-
-### Iterators
-
-The grid has implemented few iterators that can be very handy on daily usage:
-
-#### Iterating over the flatten grid structure
-
-```rust
-
-let grid: DasGrid<i32> = DasGrid::new(2, 2, 0);
-
-let mut result: Vec<i32> = vec![];
-for v in &grid {
-    println!("Value {}", value);
-}
-
-assert!(result == [0, 0, 0, 0]);
-```
-
-#### Iterating over the enumerate of X and Y
-
-```rust
-let mut grid: DasGrid<i32> = DasGrid::new(2, 2, 0);
-
-// Returns the X and Y as tuple
-for (x, y) in grid.enumerate() {
-    println!("X {} Y {}", x, y);
-}
 ```
 
 ## License
