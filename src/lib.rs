@@ -129,7 +129,7 @@ use std::{
 
 /// Err represents the errors that can happen on the Das Grid module
 ///
-/// Err::OutOfGrid represent the error when the attempt of move or set a value
+/// GridErr::OutOfGrid represent the error when the attempt of move or set a value
 /// is beyond the bounds of grid
 ///
 /// Err::RuleFailed represents the error when some rule failed to applied
@@ -247,7 +247,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Sets a given value to the position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
@@ -308,7 +308,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Gets a give value to the position (x, y) as mutable
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
@@ -327,7 +327,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Gets a give value to the position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let grid = das_grid::Grid::new(2, 2, 1);
@@ -345,7 +345,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Moves a given value from position (x, y) to destiny position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
@@ -370,7 +370,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// * DasGrid::MoveDirection::Down, translates to (0, 1)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
