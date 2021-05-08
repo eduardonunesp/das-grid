@@ -7,7 +7,3 @@ license = "MIT"
 description = "2D grid library which serves as fundamental building block for any 2D game built on the concept of grid"
 homepage = "https://github.com/eduardonunesp/das-grid"
 repository = "https://github.com/eduardonunesp/das-grid.git"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-doctest = false
