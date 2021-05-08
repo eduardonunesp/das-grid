@@ -144,10 +144,10 @@ pub const MOVE_DOWN: (i32, i32) = (0, 1);
 ///
 /// The cells are internally manage by a `Vec<T>`
 pub struct DasGrid<T: Copy + Clone> {
-    pub width: i32,
-    pub height: i32,
-    initial_value: T,
-    cells: Vec<T>,
+    pub(crate) width: i32,
+    pub(crate) height: i32,
+    pub(crate) initial_value: T,
+    pub(crate) cells: Vec<T>,
 }
 
 impl<T: Copy + Clone> DasGrid<T> {
@@ -317,7 +317,7 @@ impl<T: Copy + Clone> DasGrid<T> {
     /// Get the size of grid based on cells length
     ///
     /// For instance a 10x10 grid will return the size of 100
-    ///    ///
+    ///
     /// ```.rust
     /// use DasGrid::Grid;
     /// let grid = Grid::new(2, 2, 1);
@@ -325,6 +325,42 @@ impl<T: Copy + Clone> DasGrid<T> {
     /// ```
     pub fn size(&self) -> usize {
         self.cells.len()
+    }
+
+    /// The width of the grid
+    pub fn width(&self) -> i32 {
+        self.width
+    }
+
+    /// The height of the grid
+    pub fn height(&self) -> i32 {
+        self.height
+    }
+
+    /// Returns the grid as a tuple of (x, y)
+    ///
+    /// ```.rust
+    /// let grid = Grid::new(2, 2, 1);
+    /// for (x, y) in grid.enumerate() {
+    ///     println!("x {} y {}", x, y);
+    /// }
+    /// ```
+    pub fn enumerate(&self) -> Vec<(i32, i32)> {
+        let mut x = 0;
+        let mut y = 0;
+        self.cells
+            .iter()
+            .enumerate()
+            .map(|(idx, _)| {
+                if idx as i32 % self.width() == 0 && idx > 1 {
+                    x = 0;
+                    y += 1;
+                }
+                let res = (x, y);
+                x += 1;
+                res
+            })
+            .collect::<Vec<_>>()
     }
 }
 

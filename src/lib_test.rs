@@ -1,6 +1,9 @@
 #![allow(warnings, unused)]
 
-use std::fmt::{self};
+use std::{
+    borrow::BorrowMut,
+    fmt::{self},
+};
 
 use crate::{DasGrid, OutOfGridErr};
 
@@ -121,4 +124,27 @@ fn test_move_to() {
 
     let ret = g.mov_to((1, 1), crate::MoveDirection::Right);
     assert!(ret.unwrap_err() == OutOfGridErr);
+}
+
+#[test]
+fn test_enumerate() {
+    let mut grid: DasGrid<i32> = DasGrid::new(2, 2, 0);
+
+    let mut result: Vec<(i32, i32)> = vec![];
+    for xy in grid.enumerate() {
+        result.push(xy)
+    }
+    assert!(result == [(0, 0), (1, 0), (0, 1), (1, 1)])
+}
+
+#[test]
+fn test_iterators() {
+    let grid: DasGrid<i32> = DasGrid::new(2, 2, 0);
+
+    let mut result: Vec<i32> = vec![];
+    for v in &grid {
+        result.push(*v);
+    }
+
+    assert!(result == [0, 0, 0, 0]);
 }
