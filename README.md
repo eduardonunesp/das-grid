@@ -94,6 +94,42 @@ println!("{:?}", g);
 // ] }
 ```
 
+As explained before to move cells you can call the function `mov_to` and pass the origin and destiny as a direction
+
+The directions can be Left, Right, Top, Down:
+
+* DasGrid::MoveDirection::Left, translates to (-1, 0)
+* DasGrid::MoveDirection::Right, translates to (1, 0)
+* DasGrid::MoveDirection::Top, translates to (0, -1)
+* DasGrid::MoveDirection::Down, translates to (0, 1)
+
+> The `mov_to` function can returns `Result<(), OutOfGridErr>` if the attept of move is out of the bounds of the grid
+
+### Iterators
+
+The grid has implemented few iterators that can be very handy on daily usage:
+
+#### Iterating over the flatten grid structure
+
+```rust
+let grid: DasGrid<i32> = DasGrid::new(2, 2, 0);
+let mut result: Vec<i32> = vec![];
+for v in &grid {
+    println!("Value {}", value);
+}
+assert!(result == [0, 0, 0, 0]);
+```
+
+#### Iterating over the enumerate of X and Y
+
+```rust
+let mut grid: DasGrid<i32> = DasGrid::new(2, 2, 0);
+// Returns the X and Y as tuple
+for (x, y) in grid.enumerate() {
+    println!("X {} Y {}", x, y);
+}
+```
+
 ## License
 
 ```text
