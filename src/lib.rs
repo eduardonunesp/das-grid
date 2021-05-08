@@ -165,15 +165,15 @@ impl<T: Copy + Clone> DasGrid<T> {
         let initial_value = value;
         let cells = vec![value; (width * height) as usize];
 
-        if cells.len() == 0 {
+        if cells.is_empty() {
             panic!("0x0 grid is forbidden")
         }
 
         Self {
             width,
             height,
-            cells,
             initial_value,
+            cells,
         }
     }
 
@@ -266,7 +266,7 @@ impl<T: Copy + Clone> DasGrid<T> {
     pub fn mov(&mut self, index: (i32, i32), dest: (i32, i32)) -> Result<(), OutOfGridErr> {
         self.check_grid_bounds(index)?;
         self.check_grid_bounds(dest)?;
-        let prev = self.get_mut(index).unwrap().clone();
+        let prev = *self.get_mut(index).unwrap();
         self.set(index, &self.initial_value.clone())?;
         self.set(dest, &prev)?;
 
@@ -307,7 +307,7 @@ impl<T: Copy + Clone> DasGrid<T> {
         let dest = (x + xx, y + yy);
         self.check_grid_bounds(dest)?;
 
-        let prev = self.get_mut(index).unwrap().clone();
+        let prev = *self.get_mut(index).unwrap();
         self.set(index, &self.initial_value.clone())?;
         self.set(dest, &prev)?;
 
