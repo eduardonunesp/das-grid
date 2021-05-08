@@ -4,6 +4,7 @@
 **Das Grid** is a 2D grid library which serves as fundamental building block for any 2D game built on the concept of grid
 
 Famous games built on 2d grid concept:
+
 * Draughts/Checkers
 * Chess
 * Scrabble
@@ -21,7 +22,7 @@ Das Grid offers:
 
 ### Creating the grid
 
-```.rust
+```rust
 // Creates a 10x10 grid with 0 as default value for each cell
 let mut g = DasGrid::new(10, 10, 0);
 
@@ -31,13 +32,13 @@ g.set((5, 5), &1);
 
 ### Bring your own type
 
-```.rust
+```rust
 // Using &str instead of i32
 let mut g: Grid<&str> = DasGrid::new(10, 10, "a");
 println!(g.get((0, 0)).unwrap()); // ouputs: "a"
 ```
 
-```.rust
+```rust
 // Your own enum, much better to track grid values
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Pawn {
@@ -76,7 +77,7 @@ if let Ok(()) = g.mov_to((5, 5), crate::MoveDirection::Right) {
 
 Each tile of the grid is called cell and each cell is the type that you want, because it is a 2D structure each cell has an address which consists of X and Y
 
-```.rust
+```rust
 // Creates a 5x5 grid with 0 as default value for each cell
 let mut g = DasGrid::new(5, 5, 0);
 
@@ -84,11 +85,11 @@ let mut g = DasGrid::new(5, 5, 0);
 println!("{:?}", g);
 // outputs:
 // Grid { width: 5, height: 5, cells: [
-// 	  0 (x: 0 y: 0)	  0 (x: 1 y: 0)	  0 (x: 2 y: 0)	  0 (x: 3 y: 0)	  0 (x: 4 y: 0)
-// 	  0 (x: 0 y: 1)	  0 (x: 1 y: 1)	  0 (x: 2 y: 1)	  0 (x: 3 y: 1)	  0 (x: 4 y: 1)
-// 	  0 (x: 0 y: 2)	  0 (x: 1 y: 2)	  0 (x: 2 y: 2)	  0 (x: 3 y: 2)	  0 (x: 4 y: 2)
-// 	  0 (x: 0 y: 3)	  0 (x: 1 y: 3)	  0 (x: 2 y: 3)	  0 (x: 3 y: 3)	  0 (x: 4 y: 3)
-// 	  0 (x: 0 y: 4)	  0 (x: 1 y: 4)	  0 (x: 2 y: 4)	  0 (x: 3 y: 4)	  0 (x: 4 y: 4)
+//  0 (x: 0 y: 0) 0 (x: 1 y: 0) 0 (x: 2 y: 0) 0 (x: 3 y: 0) 0 (x: 4 y: 0)
+//  0 (x: 0 y: 1) 0 (x: 1 y: 1) 0 (x: 2 y: 1) 0 (x: 3 y: 1) 0 (x: 4 y: 1)
+//  0 (x: 0 y: 2) 0 (x: 1 y: 2) 0 (x: 2 y: 2) 0 (x: 3 y: 2) 0 (x: 4 y: 2)
+//  0 (x: 0 y: 3) 0 (x: 1 y: 3) 0 (x: 2 y: 3) 0 (x: 3 y: 3) 0 (x: 4 y: 3)
+//  0 (x: 0 y: 4) 0 (x: 1 y: 4) 0 (x: 2 y: 4) 0 (x: 3 y: 4) 0 (x: 4 y: 4)
 // ] }
 ```
 */
