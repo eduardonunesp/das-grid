@@ -170,9 +170,12 @@ fn test_set_with_rules() {
 }
 
 #[test]
-fn test_add_subgrid() {
-    let mut grid: Grid<i32> = Grid::new(50, 50, 0);
-    let mut sub_grid: Grid<i32> = Grid::new(10, 10, 0);
-
-    grid.add_subgrid(sub_grid);
+fn test_stamp_subgrid() {
+    let mut grid: Grid<i32> = Grid::new(10, 10, 0);
+    let sub_grid: Grid<i32> = Grid::new(2, 2, 1);
+    assert!(grid.stamp_subgrid((5, 5), sub_grid).is_ok());
+    assert!(grid.get((5, 5)).unwrap() == &1);
+    assert!(grid.get((5, 6)).unwrap() == &1);
+    assert!(grid.get((6, 5)).unwrap() == &1);
+    assert!(grid.get((6, 6)).unwrap() == &1);
 }

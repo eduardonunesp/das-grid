@@ -208,7 +208,6 @@ pub struct Grid<T: Copy + Clone> {
     pub(crate) height: i32,
     pub(crate) initial_value: T,
     pub(crate) cells: Vec<T>,
-    pub(crate) sub_grids: Vec<Box<Grid<T>>>,
 }
 
 impl<T: Copy + Clone> Grid<T> {
@@ -228,18 +227,51 @@ impl<T: Copy + Clone> Grid<T> {
 
         let initial_value = value;
         let cells = vec![value; (width * height) as usize];
-        let sub_grids: Vec<Box<Grid<T>>> = Vec::new();
 
         Self {
             width,
             height,
             initial_value,
             cells,
-            sub_grids,
         }
     }
 
-    pub fn add_subgrid(&mut self, sub_grid: Grid<T>) -> Result<&Grid<T>, GridErr> {
+    /// Stamps the subgrid into the destiny grid, merging both
+    ///
+    /// If the sub grid is greater than the main grid it return an error of GridErr::SubgridOverflow
+    /// Or if the dest x, y grid is out of bounds it return error GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// let mut grid: das_grid::Grid<i32> = das_grid::Grid::new(10, 10, 0);
+    /// let sub_grid: das_grid::Grid<i32> = das_grid::Grid::new(2, 2, 1);
+    /// assert!(grid.stamp_subgrid((5, 5), sub_grid).is_ok());
+    /// assert_eq!(grid.get((5, 5)).unwrap(), &1);
+    /// assert_eq!(grid.get((5, 6)).unwrap(), &1);
+    /// assert_eq!(grid.get((6, 5)).unwrap(), &1);
+    /// assert_eq!(grid.get((6, 6)).unwrap(), &1);
+    /// ```
+    pub fn stamp_subgrid(&mut self, index: (i32, i32), sub_grid: Grid<T>) -> Result<(), GridErr> {
+        self.check_grid_overflow(&sub_grid)?;
+        self.check_grid_bounds(index)?;
+
+        for sub_index in sub_grid.enumerate() {
+            if let Ok(subv) = sub_grid.get(sub_index) {
+                // Sum origin of subgrid and dest cells
+                let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+
+                // Ok if the subgrid bleeds
+                match self.set(dest, &subv) {
+                    Ok(_) => (),
+                    _ => (),
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    // Check if subgrid isn't bigger than the destiny grid
+    fn check_grid_overflow(&self, sub_grid: &Grid<T>) -> Result<(), GridErr> {
         if sub_grid.height > self.height {
             return Err(GridErr::SubgridOverflow);
         }
@@ -248,9 +280,7 @@ impl<T: Copy + Clone> Grid<T> {
             return Err(GridErr::SubgridOverflow);
         }
 
-        let boxed_sub_grid = Box::new(sub_grid);
-        self.sub_grids.push(boxed_sub_grid);
-        Ok(self.sub_grids.last().unwrap())
+        Ok(())
     }
 
     /// Internally checks if the index (x, y) is inside of the bounds of the grid
