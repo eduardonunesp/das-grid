@@ -21,6 +21,8 @@ Das Grid offers:
 
 ## Using **Das Grid**
 
+Also, check the documentation at [docs.rs/das-grid/0.1.4/das_grid](https://docs.rs/das-grid/0.1.4/das_grid/index.html)
+
 ### Creating the grid
 
 ```rust
