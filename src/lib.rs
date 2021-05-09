@@ -129,14 +129,17 @@ use std::{
 
 /// Err represents the errors that can happen on the Das Grid module
 ///
-/// GridErr::OutOfGrid represent the error when the attempt of move or set a value
+/// GridErr::OutOfGrid when the attempt of move or set a value
 /// is beyond the bounds of grid
 ///
-/// Err::RuleFailed represents the error when some rule failed to applied
+/// GridErr::RuleFailed when some rule failed to applied
+///
+/// GridErr::SubgridOverflow when the subgrid 0x0 is greater than the parent grid
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GridErr {
     OutOfGrid,
     RuleFailed,
+    SubgridOverflow,
 }
 
 impl fmt::Display for GridErr {
@@ -144,6 +147,10 @@ impl fmt::Display for GridErr {
         match *self {
             GridErr::OutOfGrid => write!(f, "value is out of the grid width and height"),
             GridErr::RuleFailed => write!(f, "failed to meet the rule requirements"),
+            GridErr::SubgridOverflow => write!(
+                f,
+                "the subgrid height or width is greater than the parent grid"
+            ),
         }
     }
 }
@@ -201,6 +208,7 @@ pub struct Grid<T: Copy + Clone> {
     pub(crate) height: i32,
     pub(crate) initial_value: T,
     pub(crate) cells: Vec<T>,
+    pub(crate) sub_grids: Vec<Box<Grid<T>>>,
 }
 
 impl<T: Copy + Clone> Grid<T> {
@@ -214,19 +222,35 @@ impl<T: Copy + Clone> Grid<T> {
     where
         T: Clone + Copy + Display,
     {
-        let initial_value = value;
-        let cells = vec![value; (width * height) as usize];
-
-        if cells.is_empty() {
+        if (width * height) == 0 {
             panic!("0x0 grid is forbidden")
         }
+
+        let initial_value = value;
+        let cells = vec![value; (width * height) as usize];
+        let sub_grids: Vec<Box<Grid<T>>> = Vec::new();
 
         Self {
             width,
             height,
             initial_value,
             cells,
+            sub_grids,
         }
+    }
+
+    pub fn add_subgrid(&mut self, sub_grid: Grid<T>) -> Result<&Grid<T>, GridErr> {
+        if sub_grid.height > self.height {
+            return Err(GridErr::SubgridOverflow);
+        }
+
+        if sub_grid.width > self.width {
+            return Err(GridErr::SubgridOverflow);
+        }
+
+        let boxed_sub_grid = Box::new(sub_grid);
+        self.sub_grids.push(boxed_sub_grid);
+        Ok(self.sub_grids.last().unwrap())
     }
 
     /// Internally checks if the index (x, y) is inside of the bounds of the grid

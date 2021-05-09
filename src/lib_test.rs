@@ -168,3 +168,11 @@ fn test_set_with_rules() {
             == GridErr::RuleFailed
     );
 }
+
+#[test]
+fn test_add_subgrid() {
+    let mut grid: Grid<i32> = Grid::new(50, 50, 0);
+    let mut sub_grid: Grid<i32> = Grid::new(10, 10, 0);
+
+    grid.add_subgrid(sub_grid);
+}
