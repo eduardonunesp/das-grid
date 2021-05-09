@@ -179,3 +179,20 @@ fn test_stamp_subgrid() {
     assert!(grid.get((6, 5)).unwrap() == &1);
     assert!(grid.get((6, 6)).unwrap() == &1);
 }
+
+#[test]
+fn test_stamp_subgrid_with_rules_1() {
+    let mut grid: Grid<i32> = Grid::new(10, 10, 1);
+    let sub_grid: Grid<i32> = Grid::new(2, 2, 1);
+
+    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
+        if *value == 1 {
+            return Err(GridErr::RuleFailed);
+        }
+        Ok(())
+    };
+
+    assert!(grid
+        .stamp_subgrid_with_rules((5, 5), sub_grid, vec![rule_not_1])
+        .is_err());
+}
