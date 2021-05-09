@@ -239,7 +239,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Creates a grid from a given vector with quadratic size
     /// For example this will generate a 2x2 grid
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new_from_vector(vec![1, 2, 3, 4]);
+    /// let mut grid = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
     /// assert_eq!(grid.size(), 4);
     /// ```
     pub fn new_from_vector(rows: i32, cols: i32, vec: Vec<T>) -> Self {
@@ -307,6 +307,9 @@ impl<T: Copy + Clone> Grid<T> {
     /// Or if the dest x, y grid is out of bounds it return error GridErr::OutOfGrid
     ///
     /// ```.rust
+    /// let mut grid = das_grid::Grid::new_from_vector(4, 4, (1..=16).collect());
+    /// let sub_grid = grid.get_subgrid((2, 2), 2, 2).unwrap();
+    /// assert_eq!(sub_grid.get_flatten_cells(), vec![11, 12, 15, 16]);
     /// ```
     pub fn get_subgrid(&self, index: (i32, i32), rows: i32, cols: i32) -> Result<Grid<T>, GridErr> {
         self.check_grid_bounds(index)?;
@@ -316,7 +319,7 @@ impl<T: Copy + Clone> Grid<T> {
         for sub_index in sub_grid.enumerate() {
             let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
             if let Ok(subv) = self.get(dest) {
-                match sub_grid.set(dest, &subv) {
+                match sub_grid.set(sub_index, &subv) {
                     Ok(_) => (),
                     _ => (),
                 }
@@ -628,7 +631,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// If the row idx is wrong it can return the error GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut g = das_grid::Grid::new_from_vector(vec![1, 2, 3, 4]);
+    /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
     /// let row = g.get_row(1).unwrap();
     /// assert_eq!(row, vec![3, 4]);
     /// ```
@@ -646,7 +649,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// If the col idx is wrong it can return the error GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut g = das_grid::Grid::new_from_vector(vec![1, 2, 3, 4]);
+    /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
     /// let col = g.get_col(1).unwrap();
     /// assert_eq!(col, vec![2, 4]);
     /// ```
@@ -657,6 +660,16 @@ impl<T: Copy + Clone> Grid<T> {
             vec_result.push(*v);
         }
         Ok(vec_result)
+    }
+
+    /// Returns a clone of the internal representation of the grid
+    ///
+    /// ```.rust
+    /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
+    /// assert_eq!(g.get_flatten_cells(), vec![1,2,3,4]);
+    /// ```
+    pub fn get_flatten_cells(&self) -> Vec<T> {
+        self.cells.clone()
     }
 }
 

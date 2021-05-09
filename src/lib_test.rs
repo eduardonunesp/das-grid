@@ -214,9 +214,7 @@ fn test_new_from_vec() {
 
 #[test]
 fn test_get_subgrid() {
-    let mut g = Grid::new_from_vector(3, 2, vec![1, 2, 3, 4, 5, 6]);
-    println!("{:?}", g);
-
-    let mut g = Grid::new(3, 2, 0);
-    println!("{:?}", g);
+    let mut grid = Grid::new_from_vector(4, 4, (1..=16).collect());
+    let sub_grid = grid.get_subgrid((2, 2), 2, 2).unwrap();
+    assert_eq!(sub_grid.get_flatten_cells(), vec![11, 12, 15, 16]);
 }
