@@ -86,7 +86,7 @@ let mut g = das_grid::Grid::new(5, 5, 0);
 // Print with special {:?} to see the contents of the grid
 println!("{:?}", g);
 // outputs:
-// Grid { width: 5, height: 5, cells: [
+// Grid { rows: 5, cols: 5, cells: [
 //  0 (x: 0 y: 0) 0 (x: 1 y: 0) 0 (x: 2 y: 0) 0 (x: 3 y: 0) 0 (x: 4 y: 0)
 //  0 (x: 0 y: 1) 0 (x: 1 y: 1) 0 (x: 2 y: 1) 0 (x: 3 y: 1) 0 (x: 4 y: 1)
 //  0 (x: 0 y: 2) 0 (x: 1 y: 2) 0 (x: 2 y: 2) 0 (x: 3 y: 2) 0 (x: 4 y: 2)
@@ -145,11 +145,11 @@ pub enum GridErr {
 impl fmt::Display for GridErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            GridErr::OutOfGrid => write!(f, "value is out of the grid width and height"),
+            GridErr::OutOfGrid => write!(f, "value is out of the grid rows and cols"),
             GridErr::RuleFailed => write!(f, "failed to meet the rule requirements"),
             GridErr::SubgridOverflow => write!(
                 f,
-                "the subgrid height or width is greater than the parent grid"
+                "the subgrid cols or rows is greater than the parent grid"
             ),
         }
     }
@@ -204,8 +204,8 @@ pub const MOVE_DOWN: (i32, i32) = (0, 1);
 /// ```
 
 pub struct Grid<T: Copy + Clone> {
-    pub(crate) width: i32,
-    pub(crate) height: i32,
+    pub(crate) rows: i32,
+    pub(crate) cols: i32,
     pub(crate) initial_value: T,
     pub(crate) cells: Vec<T>,
 }
@@ -217,20 +217,20 @@ impl<T: Copy + Clone> Grid<T> {
     /// let grid = das_grid::Grid::new(2, 2, 1);
     /// assert_eq!(grid.size(), 4);
     /// ```
-    pub fn new(width: i32, height: i32, value: T) -> Self
+    pub fn new(rows: i32, cols: i32, value: T) -> Self
     where
-        T: Clone + Copy + Display,
+        T: Clone + Copy,
     {
-        if (width * height) == 0 {
+        if (rows * cols) == 0 {
             panic!("0x0 grid is forbidden")
         }
 
         let initial_value = value;
-        let cells = vec![value; (width * height) as usize];
+        let cells = vec![value; (rows * cols) as usize];
 
         Self {
-            width,
-            height,
+            rows,
+            cols,
             initial_value,
             cells,
         }
@@ -242,7 +242,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// let mut grid = das_grid::Grid::new_from_vector(vec![1, 2, 3, 4]);
     /// assert_eq!(grid.size(), 4);
     /// ```
-    pub fn new_from_vector(vec: Vec<T>) -> Self {
+    pub fn new_from_vector(rows: i32, cols: i32, vec: Vec<T>) -> Self {
         if vec.len() % 2 != 0 {
             panic!("The vector isn't multiple of 2");
         }
@@ -251,14 +251,16 @@ impl<T: Copy + Clone> Grid<T> {
             panic!("0x0 grid is forbidden")
         }
 
+        if rows * cols != vec.len() as i32 {
+            panic!("cols and rows should be same vector size")
+        }
+
         let initial_value = vec.first().unwrap().clone();
         let cells = vec.to_vec();
-        let width = (vec.len() / 2) as i32;
-        let height = (vec.len() / 2) as i32;
 
         Self {
-            width,
-            height,
+            rows,
+            cols,
             initial_value,
             cells,
         }
@@ -296,6 +298,32 @@ impl<T: Copy + Clone> Grid<T> {
         }
 
         Ok(())
+    }
+
+    /// Creates the a new grid which is a snapshot of the main grid on the given position and size
+    ///
+    /// If the sub grid is greater than the main grid it return an error of GridErr::SubgridOverflow
+    ///
+    /// Or if the dest x, y grid is out of bounds it return error GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// ```
+    pub fn get_subgrid(&self, index: (i32, i32), rows: i32, cols: i32) -> Result<Grid<T>, GridErr> {
+        self.check_grid_bounds(index)?;
+        let mut sub_grid = Grid::new(rows, cols, self.initial_value);
+        self.check_grid_overflow(&sub_grid)?;
+
+        for sub_index in sub_grid.enumerate() {
+            let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+            if let Ok(subv) = self.get(dest) {
+                match sub_grid.set(dest, &subv) {
+                    Ok(_) => (),
+                    _ => (),
+                }
+            }
+        }
+
+        Ok(sub_grid)
     }
 
     /// Stamps the subgrid into the destiny grid, merging both
@@ -360,11 +388,11 @@ impl<T: Copy + Clone> Grid<T> {
 
     // Check if subgrid isn't bigger than the destiny grid
     fn check_grid_overflow(&self, sub_grid: &Grid<T>) -> Result<(), GridErr> {
-        if sub_grid.height > self.height {
+        if sub_grid.cols > self.cols {
             return Err(GridErr::SubgridOverflow);
         }
 
-        if sub_grid.width > self.width {
+        if sub_grid.rows > self.rows {
             return Err(GridErr::SubgridOverflow);
         }
 
@@ -375,11 +403,11 @@ impl<T: Copy + Clone> Grid<T> {
     fn check_grid_bounds(&self, index: (i32, i32)) -> Result<(), GridErr> {
         let (x, y) = index;
 
-        if x < 0 || x >= self.width {
+        if x < 0 || x >= self.rows {
             return Err(GridErr::OutOfGrid);
         }
 
-        if y < 0 || y >= self.height {
+        if y < 0 || y >= self.cols {
             return Err(GridErr::OutOfGrid);
         }
 
@@ -403,7 +431,7 @@ impl<T: Copy + Clone> Grid<T> {
 
         self.check_grid_bounds(index)?;
 
-        if let Some(cell) = self.cells.get_mut((x + (y * self.width)) as usize) {
+        if let Some(cell) = self.cells.get_mut((x + (y * self.rows)) as usize) {
             *cell = *value;
         }
 
@@ -463,7 +491,7 @@ impl<T: Copy + Clone> Grid<T> {
 
         self.check_grid_bounds(index)?;
 
-        Ok(self.cells.get_mut((x + (y * self.width)) as usize).unwrap())
+        Ok(self.cells.get_mut((x + (y * self.rows)) as usize).unwrap())
     }
 
     /// Gets a give value to the position (x, y)
@@ -481,7 +509,7 @@ impl<T: Copy + Clone> Grid<T> {
 
         self.check_grid_bounds(index)?;
 
-        Ok(self.cells.get((x + (y * self.width)) as usize).unwrap())
+        Ok(self.cells.get((x + (y * self.rows)) as usize).unwrap())
     }
 
     /// Moves a given value from position (x, y) to destiny position (x, y)
@@ -551,22 +579,22 @@ impl<T: Copy + Clone> Grid<T> {
         self.cells.len()
     }
 
-    /// The width of the grid
+    /// The rows of the grid
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(3, 2, 1);
-    /// assert_eq!(grid.width(), 3);
+    /// assert_eq!(grid.rows(), 3);
     /// ```
-    pub fn width(&self) -> i32 {
-        self.width
+    pub fn rows(&self) -> i32 {
+        self.rows
     }
 
-    /// The height of the grid
+    /// The cols of the grid
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(3, 2, 1);
-    /// assert_eq!(grid.height(), 2);
+    /// assert_eq!(grid.cols(), 2);
     /// ```
-    pub fn height(&self) -> i32 {
-        self.height
+    pub fn cols(&self) -> i32 {
+        self.cols
     }
 
     /// Returns the grid as a tuple of (x, y)
@@ -584,7 +612,7 @@ impl<T: Copy + Clone> Grid<T> {
             .iter()
             .enumerate()
             .map(|(idx, _)| {
-                if idx as i32 % self.width() == 0 && idx > 1 {
+                if idx as i32 % self.rows() == 0 && idx > 1 {
                     x = 0;
                     y += 1;
                 }
@@ -606,7 +634,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```
     pub fn get_row(&self, row_idx: i32) -> Result<Vec<T>, GridErr> {
         let mut vec_result: Vec<T> = vec![];
-        for idx in (0..self.width).into_iter() {
+        for idx in (0..self.rows).into_iter() {
             let v = self.get((idx, row_idx))?;
             vec_result.push(*v);
         }
@@ -624,7 +652,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```
     pub fn get_col(&self, col_idx: i32) -> Result<Vec<T>, GridErr> {
         let mut vec_result: Vec<T> = vec![];
-        for idx in (0..self.height).into_iter() {
+        for idx in (0..self.cols).into_iter() {
             let v = self.get((col_idx, idx))?;
             vec_result.push(*v);
         }
@@ -652,8 +680,8 @@ impl<T: Copy + Clone> fmt::Display for Grid<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "Grid {{ width: {}, height: {}, cells: [...] }}",
-            self.width, self.height
+            "Grid {{ rows: {}, cols: {}, cells: [...] }}",
+            self.rows, self.cols
         )
     }
 }
@@ -664,7 +692,7 @@ impl<T: Copy + Clone + Display> fmt::Debug for Grid<T> {
 
         let mut pos = (0, 0);
         for (idx, cell) in self.cells.iter().enumerate() {
-            if idx as i32 % self.width == 0 && idx > 0 {
+            if idx as i32 % self.cols == 0 && idx > 0 {
                 pos.0 = 0;
                 pos.1 += 1;
                 cell_str += "\n";
@@ -675,8 +703,8 @@ impl<T: Copy + Clone + Display> fmt::Debug for Grid<T> {
 
         write!(
             f,
-            "Grid {{ width: {}, height: {}, cells: [\n{}\n] }}",
-            self.width, self.height, cell_str,
+            "Grid {{ rows: {}, cols: {}, cells: [\n{}\n] }}",
+            self.rows, self.cols, cell_str,
         )
     }
 }

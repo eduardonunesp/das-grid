@@ -87,7 +87,7 @@ let mut g = das_grid::Grid::new(5, 5, 0);
 // Print with special {:?} to see the contents of the grid
 println!("{:?}", g);
 // outputs:
-// Grid { width: 5, height: 5, cells: [
+// Grid { rows: 5, cols: 5, cells: [
 //  0 (x: 0 y: 0) 0 (x: 1 y: 0) 0 (x: 2 y: 0) 0 (x: 3 y: 0) 0 (x: 4 y: 0)
 //  0 (x: 0 y: 1) 0 (x: 1 y: 1) 0 (x: 2 y: 1) 0 (x: 3 y: 1) 0 (x: 4 y: 1)
 //  0 (x: 0 y: 2) 0 (x: 1 y: 2) 0 (x: 2 y: 2) 0 (x: 3 y: 2) 0 (x: 4 y: 2)
