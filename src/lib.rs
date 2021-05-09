@@ -270,6 +270,66 @@ impl<T: Copy + Clone> Grid<T> {
         Ok(())
     }
 
+    /// Stamps the subgrid into the destiny grid, merging both
+    /// Only if no rule return error
+    ///
+    /// If the sub grid is greater than the main grid it return an error of GridErr::SubgridOverflow
+    ///
+    /// Or if the dest x, y grid is out of bounds it return error GridErr::OutOfGrid
+    ///
+    /// And if a rule some rule failed it will return GridErr::RuleFailed
+    ///
+    /// ```.rust
+    /// let mut grid: das_grid::Grid<i32> = das_grid::Grid::new(10, 10, 1);
+    /// let sub_grid: das_grid::Grid<i32> = das_grid::Grid::new(2, 2, 1);
+    ///
+    /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
+    ///     if *value == 1 {
+    ///         return Err(das_grid::GridErr::RuleFailed);
+    ///     }
+    ///     Ok(())
+    /// };
+    ///
+    /// assert!(grid
+    ///     .stamp_subgrid_with_rules((5, 5), sub_grid, vec![rule_not_1])
+    ///     .is_err());
+    /// ```
+    pub fn stamp_subgrid_with_rules<R>(
+        &mut self,
+        index: (i32, i32),
+        sub_grid: Grid<T>,
+        rules: Vec<R>,
+    ) -> Result<(), GridErr>
+    where
+        R: Fn((i32, i32), &T) -> Result<(), GridErr>,
+    {
+        self.check_grid_overflow(&sub_grid)?;
+        self.check_grid_bounds(index)?;
+
+        for sub_index in sub_grid.enumerate() {
+            if let Ok(subv) = sub_grid.get(sub_index) {
+                // Sum origin of subgrid and dest cells
+                let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+
+                // Get the destiny
+                let destv = self.get(dest)?;
+
+                // Test rules on dest pos and value
+                for rule in rules.iter() {
+                    rule(dest, destv)?;
+                }
+
+                // Ok if the subgrid bleeds
+                match self.set(dest, &subv) {
+                    Ok(_) => (),
+                    _ => (),
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     // Check if subgrid isn't bigger than the destiny grid
     fn check_grid_overflow(&self, sub_grid: &Grid<T>) -> Result<(), GridErr> {
         if sub_grid.height > self.height {
@@ -505,6 +565,52 @@ impl<T: Copy + Clone> Grid<T> {
                 res
             })
             .collect::<Vec<_>>()
+    }
+
+    /// Returns the type vector with the values from the row
+    ///
+    /// If the row idx is wrong it can return the error GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// let mut g = das_grid::Grid::new(2, 2, 0);
+    /// let mut count = 1;
+    /// for c in &mut g {
+    ///     *c = count;
+    ///     count += 1;
+    /// }
+    /// let row = g.get_row(1).unwrap();
+    /// assert_eq!(row, vec![3, 4]);
+    /// ```
+    pub fn get_row(&self, row_idx: i32) -> Result<Vec<T>, GridErr> {
+        let mut vec_result: Vec<T> = vec![];
+        for idx in (0..self.width).into_iter() {
+            let v = self.get((idx, row_idx))?;
+            vec_result.push(*v);
+        }
+        Ok(vec_result)
+    }
+
+    /// Returns the type vector with the values from the col
+    ///
+    /// If the col idx is wrong it can return the error GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// let mut g = das_grid::Grid::new(2, 2, 0);
+    /// let mut count = 1;
+    /// for c in &mut g {
+    ///     *c = count;
+    ///     count += 1;
+    /// }
+    /// let col = g.get_col(1).unwrap();
+    /// assert_eq!(col, vec![2, 4]);
+    /// ```
+    pub fn get_col(&self, col_idx: i32) -> Result<Vec<T>, GridErr> {
+        let mut vec_result: Vec<T> = vec![];
+        for idx in (0..self.height).into_iter() {
+            let v = self.get((col_idx, idx))?;
+            vec_result.push(*v);
+        }
+        Ok(vec_result)
     }
 }
 
