@@ -566,6 +566,52 @@ impl<T: Copy + Clone> Grid<T> {
             })
             .collect::<Vec<_>>()
     }
+
+    /// Returns the type vector with the values from the row
+    ///
+    /// If the row idx is wrong it can return the error GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// let mut g = das_grid::Grid::new(2, 2, 0);
+    /// let mut count = 1;
+    /// for c in &mut g {
+    ///     *c = count;
+    ///     count += 1;
+    /// }
+    /// let row = g.get_row(1).unwrap();
+    /// assert_eq!(row, vec![3, 4]);
+    /// ```
+    pub fn get_row(&self, row_idx: i32) -> Result<Vec<T>, GridErr> {
+        let mut vec_result: Vec<T> = vec![];
+        for idx in (0..self.width).into_iter() {
+            let v = self.get((idx, row_idx))?;
+            vec_result.push(*v);
+        }
+        Ok(vec_result)
+    }
+
+    /// Returns the type vector with the values from the col
+    ///
+    /// If the col idx is wrong it can return the error GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// let mut g = das_grid::Grid::new(2, 2, 0);
+    /// let mut count = 1;
+    /// for c in &mut g {
+    ///     *c = count;
+    ///     count += 1;
+    /// }
+    /// let col = g.get_col(1).unwrap();
+    /// assert_eq!(col, vec![2, 4]);
+    /// ```
+    pub fn get_col(&self, col_idx: i32) -> Result<Vec<T>, GridErr> {
+        let mut vec_result: Vec<T> = vec![];
+        for idx in (0..self.height).into_iter() {
+            let v = self.get((col_idx, idx))?;
+            vec_result.push(*v);
+        }
+        Ok(vec_result)
+    }
 }
 
 impl<'a, T: Copy + Clone> IntoIterator for &'a Grid<T> {
