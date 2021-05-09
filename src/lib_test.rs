@@ -199,14 +199,15 @@ fn test_stamp_subgrid_with_rules_1() {
 
 #[test]
 fn test_get_row() {
-    let mut g = Grid::new(2, 2, 0);
-    let mut count = 1;
-    for c in &mut g {
-        *c = count;
-        count += 1;
-    }
+    let mut g = Grid::new_from_vector(vec![1, 2, 3, 4]);
     let row = g.get_row(1).unwrap();
     assert_eq!(row, vec![3, 4]);
     let col = g.get_col(1).unwrap();
     assert_eq!(col, vec![2, 4]);
+}
+
+#[test]
+fn test_new_from_vec() {
+    let mut g = Grid::new_from_vector(vec![1, 2, 3, 4]);
+    assert_eq!(g.size(), 4);
 }

@@ -236,6 +236,34 @@ impl<T: Copy + Clone> Grid<T> {
         }
     }
 
+    /// Creates a grid from a given vector with quadratic size
+    /// For example this will generate a 2x2 grid
+    /// ```.rust
+    /// let mut grid = das_grid::Grid::new_from_vector(vec![1, 2, 3, 4]);
+    /// assert_eq!(grid.size(), 4);
+    /// ```
+    pub fn new_from_vector(vec: Vec<T>) -> Self {
+        if vec.len() % 2 != 0 {
+            panic!("The vector isn't multiple of 2");
+        }
+
+        if vec.len() == 0 {
+            panic!("0x0 grid is forbidden")
+        }
+
+        let initial_value = vec.first().unwrap().clone();
+        let cells = vec.to_vec();
+        let width = (vec.len() / 2) as i32;
+        let height = (vec.len() / 2) as i32;
+
+        Self {
+            width,
+            height,
+            initial_value,
+            cells,
+        }
+    }
+
     /// Stamps the subgrid into the destiny grid, merging both
     ///
     /// If the sub grid is greater than the main grid it return an error of GridErr::SubgridOverflow
@@ -572,12 +600,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// If the row idx is wrong it can return the error GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut g = das_grid::Grid::new(2, 2, 0);
-    /// let mut count = 1;
-    /// for c in &mut g {
-    ///     *c = count;
-    ///     count += 1;
-    /// }
+    /// let mut g = das_grid::Grid::new_from_vector(vec![1, 2, 3, 4]);
     /// let row = g.get_row(1).unwrap();
     /// assert_eq!(row, vec![3, 4]);
     /// ```
@@ -595,12 +618,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// If the col idx is wrong it can return the error GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut g = das_grid::Grid::new(2, 2, 0);
-    /// let mut count = 1;
-    /// for c in &mut g {
-    ///     *c = count;
-    ///     count += 1;
-    /// }
+    /// let mut g = das_grid::Grid::new_from_vector(vec![1, 2, 3, 4]);
     /// let col = g.get_col(1).unwrap();
     /// assert_eq!(col, vec![2, 4]);
     /// ```
