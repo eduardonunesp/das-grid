@@ -218,3 +218,19 @@ fn test_get_subgrid() {
     let sub_grid = grid.get_subgrid((2, 2), 2, 2).unwrap();
     assert_eq!(sub_grid.get_flatten_cells(), vec![11, 12, 15, 16]);
 }
+
+#[test]
+fn test_mov_to_with_rules() {
+    let mut g = Grid::new(2, 2, 0);
+    g.set((1, 0), &1);
+
+    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
+        if *value == 1 {
+            return Err(GridErr::RuleFailed);
+        }
+        Ok(())
+    };
+
+    let ret = g.mov_to_with_rules((0, 0), MoveDirection::Right, vec![rule_not_1]);
+    assert!(ret.is_err());
+}

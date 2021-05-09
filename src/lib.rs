@@ -570,6 +570,68 @@ impl<T: Copy + Clone> Grid<T> {
         Ok(())
     }
 
+    /// Moves a given value from position (x, y) to another position based on the direction
+    /// Only if no rule return error
+    ///
+    /// if the dest x, y grid is out of bounds it return error GridErr::OutOfGrid
+    ///
+    /// And if a rule some rule failed it will return GridErr::RuleFailed
+    ///
+    /// The directions can be Left, Right, Top, Down:
+    /// * DasGrid::MoveDirection::Left, translates to (-1, 0)
+    /// * DasGrid::MoveDirection::Right, translates to (1, 0)
+    /// * DasGrid::MoveDirection::Top, translates to (0, -1)
+    /// * DasGrid::MoveDirection::Down, translates to (0, 1)
+    ///
+    /// Be careful if the value is out of the bounds of grid it will return an error
+    /// with the type of GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// let mut g = das_grid::Grid::new(2, 2, 0);
+    /// g.set((1, 0), &1);
+    /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
+    ///     if *value == 1 {
+    ///         return Err(das_grid::GridErr::RuleFailed);
+    ///     }
+    ///     Ok(())
+    /// };
+    /// let ret = g.mov_to_with_rules((0, 0), das_grid::MoveDirection::Right, vec![rule_not_1]);
+    /// assert!(ret.is_err());
+    /// ```
+    pub fn mov_to_with_rules<R>(
+        &mut self,
+        index: (i32, i32),
+        direction: MoveDirection,
+        rules: Vec<R>,
+    ) -> Result<(), GridErr>
+    where
+        R: Fn((i32, i32), &T) -> Result<(), GridErr>,
+    {
+        let (x, y) = index;
+        self.check_grid_bounds(index)?;
+
+        let (xx, yy) = match direction {
+            MoveDirection::Up => MOVE_UP,
+            MoveDirection::Down => MOVE_DOWN,
+            MoveDirection::Left => MOVE_LEFT,
+            MoveDirection::Right => MOVE_RIGHT,
+        };
+
+        let dest = (x + xx, y + yy);
+        self.check_grid_bounds(dest)?;
+
+        let destv = self.get(dest)?;
+        for rule in rules {
+            rule(dest, destv)?;
+        }
+
+        let prev = *self.get_mut(index).unwrap();
+        self.set(index, &self.initial_value.clone())?;
+        self.set(dest, &prev)?;
+
+        Ok(())
+    }
+
     /// Get the size of grid based on cells length
     ///
     /// For instance a 10x10 grid will return the size of 100
@@ -706,12 +768,12 @@ impl<T: Copy + Clone + Display> fmt::Debug for Grid<T> {
         let mut pos = (0, 0);
         for (idx, cell) in self.cells.iter().enumerate() {
             if idx as i32 % self.cols == 0 && idx > 0 {
-                pos.0 = 0;
-                pos.1 += 1;
+                pos.1 = 0;
+                pos.0 += 1;
                 cell_str += "\n";
             }
             cell_str.push_str(&format!("\t{:3} (x: {} y: {})", cell, pos.0, pos.1));
-            pos.0 += 1
+            pos.1 += 1
         }
 
         write!(
