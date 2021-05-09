@@ -196,3 +196,17 @@ fn test_stamp_subgrid_with_rules_1() {
         .stamp_subgrid_with_rules((5, 5), sub_grid, vec![rule_not_1])
         .is_err());
 }
+
+#[test]
+fn test_get_row() {
+    let mut g = Grid::new(2, 2, 0);
+    let mut count = 1;
+    for c in &mut g {
+        *c = count;
+        count += 1;
+    }
+    let row = g.get_row(1).unwrap();
+    assert_eq!(row, vec![3, 4]);
+    let col = g.get_col(1).unwrap();
+    assert_eq!(col, vec![2, 4]);
+}
