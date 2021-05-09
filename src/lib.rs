@@ -129,14 +129,17 @@ use std::{
 
 /// Err represents the errors that can happen on the Das Grid module
 ///
-/// Err::OutOfGrid represent the error when the attempt of move or set a value
+/// GridErr::OutOfGrid when the attempt of move or set a value
 /// is beyond the bounds of grid
 ///
-/// Err::RuleFailed represents the error when some rule failed to applied
+/// GridErr::RuleFailed when some rule failed to applied
+///
+/// GridErr::SubgridOverflow when the subgrid 0x0 is greater than the parent grid
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GridErr {
     OutOfGrid,
     RuleFailed,
+    SubgridOverflow,
 }
 
 impl fmt::Display for GridErr {
@@ -144,10 +147,20 @@ impl fmt::Display for GridErr {
         match *self {
             GridErr::OutOfGrid => write!(f, "value is out of the grid width and height"),
             GridErr::RuleFailed => write!(f, "failed to meet the rule requirements"),
+            GridErr::SubgridOverflow => write!(
+                f,
+                "the subgrid height or width is greater than the parent grid"
+            ),
         }
     }
 }
 
+/// Represents the possible direction to move
+///
+/// MoveDirection::Right (1, 0)
+/// MoveDirection::Left (-1, 0)
+/// MoveDirection::Up (0, -1)
+/// MoveDirection::Down (0, 1)
 #[derive(Debug, PartialEq, Eq)]
 pub enum MoveDirection {
     Right,
@@ -208,12 +221,12 @@ impl<T: Copy + Clone> Grid<T> {
     where
         T: Clone + Copy + Display,
     {
-        let initial_value = value;
-        let cells = vec![value; (width * height) as usize];
-
-        if cells.is_empty() {
+        if (width * height) == 0 {
             panic!("0x0 grid is forbidden")
         }
+
+        let initial_value = value;
+        let cells = vec![value; (width * height) as usize];
 
         Self {
             width,
@@ -221,6 +234,53 @@ impl<T: Copy + Clone> Grid<T> {
             initial_value,
             cells,
         }
+    }
+
+    /// Stamps the subgrid into the destiny grid, merging both
+    ///
+    /// If the sub grid is greater than the main grid it return an error of GridErr::SubgridOverflow
+    /// Or if the dest x, y grid is out of bounds it return error GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// let mut grid: das_grid::Grid<i32> = das_grid::Grid::new(10, 10, 0);
+    /// let sub_grid: das_grid::Grid<i32> = das_grid::Grid::new(2, 2, 1);
+    /// assert!(grid.stamp_subgrid((5, 5), sub_grid).is_ok());
+    /// assert_eq!(grid.get((5, 5)).unwrap(), &1);
+    /// assert_eq!(grid.get((5, 6)).unwrap(), &1);
+    /// assert_eq!(grid.get((6, 5)).unwrap(), &1);
+    /// assert_eq!(grid.get((6, 6)).unwrap(), &1);
+    /// ```
+    pub fn stamp_subgrid(&mut self, index: (i32, i32), sub_grid: Grid<T>) -> Result<(), GridErr> {
+        self.check_grid_overflow(&sub_grid)?;
+        self.check_grid_bounds(index)?;
+
+        for sub_index in sub_grid.enumerate() {
+            if let Ok(subv) = sub_grid.get(sub_index) {
+                // Sum origin of subgrid and dest cells
+                let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+
+                // Ok if the subgrid bleeds
+                match self.set(dest, &subv) {
+                    Ok(_) => (),
+                    _ => (),
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    // Check if subgrid isn't bigger than the destiny grid
+    fn check_grid_overflow(&self, sub_grid: &Grid<T>) -> Result<(), GridErr> {
+        if sub_grid.height > self.height {
+            return Err(GridErr::SubgridOverflow);
+        }
+
+        if sub_grid.width > self.width {
+            return Err(GridErr::SubgridOverflow);
+        }
+
+        Ok(())
     }
 
     /// Internally checks if the index (x, y) is inside of the bounds of the grid
@@ -241,7 +301,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Sets a given value to the position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
@@ -302,7 +362,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Gets a give value to the position (x, y) as mutable
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
@@ -321,7 +381,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Gets a give value to the position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let grid = das_grid::Grid::new(2, 2, 1);
@@ -339,7 +399,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Moves a given value from position (x, y) to destiny position (x, y)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
@@ -364,7 +424,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// * DasGrid::MoveDirection::Down, translates to (0, 1)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
-    /// with the type of Err::OutOfGrid
+    /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
