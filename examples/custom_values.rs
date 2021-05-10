@@ -1,19 +1,13 @@
 extern crate das_grid;
+use parse_display_derive::Display;
 
 // Your own enum, much better to track grid values
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Display)]
 enum Pawn {
+    #[display("None")]
     None,
+    #[display("Player")]
     Player,
-}
-
-impl std::fmt::Display for Pawn {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        match *self {
-            Pawn::None => write!(f, "None"),
-            Pawn::Player => write!(f, "Player"),
-        }
-    }
 }
 
 fn main() -> Result<(), das_grid::GridErr> {

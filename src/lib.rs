@@ -127,6 +127,8 @@ use std::{
     ops::{Index, IndexMut},
 };
 
+use parse_display_derive::Display;
+
 /// Err represents the errors that can happen on the Das Grid module
 ///
 /// GridErr::OutOfGrid when the attempt of move or set a value
@@ -135,24 +137,14 @@ use std::{
 /// GridErr::RuleFailed when some rule failed to applied
 ///
 /// GridErr::SubgridOverflow when the subgrid 0x0 is greater than the parent grid
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Display)]
 pub enum GridErr {
+    #[display("value is out of the grid rows and cols")]
     OutOfGrid,
+    #[display("failed to meet the rule requirements")]
     RuleFailed,
+    #[display("the subgrid cols or rows is greater than the parent grid")]
     SubgridOverflow,
-}
-
-impl fmt::Display for GridErr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            GridErr::OutOfGrid => write!(f, "value is out of the grid rows and cols"),
-            GridErr::RuleFailed => write!(f, "failed to meet the rule requirements"),
-            GridErr::SubgridOverflow => write!(
-                f,
-                "the subgrid cols or rows is greater than the parent grid"
-            ),
-        }
-    }
 }
 
 /// Represents the possible direction to move
@@ -161,11 +153,15 @@ impl fmt::Display for GridErr {
 /// MoveDirection::Left
 /// MoveDirection::Up
 /// MoveDirection::Down
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Display)]
 pub enum MoveDirection {
+    #[display("Right (0, 1)")]
     Right,
+    #[display("Left (0, -1)")]
     Left,
+    #[display("Up (-1, 0")]
     Up,
+    #[display("Down (1, 0)")]
     Down,
 }
 
@@ -280,14 +276,14 @@ impl<T: Copy + Clone> Grid<T> {
     /// assert_eq!(grid.get((6, 5)).unwrap(), &1);
     /// assert_eq!(grid.get((6, 6)).unwrap(), &1);
     /// ```
-    pub fn stamp_subgrid(&mut self, index: (i32, i32), sub_grid: Grid<T>) -> Result<(), GridErr> {
+    pub fn stamp_subgrid(&mut self, dst: (i32, i32), sub_grid: Grid<T>) -> Result<(), GridErr> {
         self.check_grid_overflow(&sub_grid)?;
-        self.check_grid_bounds(index)?;
+        self.check_grid_bounds(dst)?;
 
         for sub_index in sub_grid.enumerate() {
             if let Ok(subv) = sub_grid.get(sub_index) {
                 // Sum origin of subgrid and dest cells
-                let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+                let dest = (dst.0 + sub_index.0, dst.1 + sub_index.1);
 
                 // Ok if the subgrid bleeds
                 match self.set(dest, &subv) {
@@ -311,13 +307,13 @@ impl<T: Copy + Clone> Grid<T> {
     /// let sub_grid = grid.get_subgrid((2, 2), 2, 2).unwrap();
     /// assert_eq!(sub_grid.get_flatten_grid(), vec![11, 12, 15, 16]);
     /// ```
-    pub fn get_subgrid(&self, index: (i32, i32), rows: i32, cols: i32) -> Result<Grid<T>, GridErr> {
-        self.check_grid_bounds(index)?;
+    pub fn get_subgrid(&self, src: (i32, i32), rows: i32, cols: i32) -> Result<Grid<T>, GridErr> {
+        self.check_grid_bounds(src)?;
         let mut sub_grid = Grid::new(rows, cols, self.initial_value);
         self.check_grid_overflow(&sub_grid)?;
 
         for sub_index in sub_grid.enumerate() {
-            let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+            let dest = (src.0 + sub_index.0, src.1 + sub_index.1);
             if let Ok(subv) = self.get(dest) {
                 match sub_grid.set(sub_index, &subv) {
                     Ok(_) => (),
@@ -355,7 +351,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```
     pub fn stamp_subgrid_with_rules<R>(
         &mut self,
-        index: (i32, i32),
+        dst: (i32, i32),
         sub_grid: Grid<T>,
         rules: Vec<R>,
     ) -> Result<(), GridErr>
@@ -363,12 +359,12 @@ impl<T: Copy + Clone> Grid<T> {
         R: Fn((i32, i32), &T) -> Result<(), GridErr>,
     {
         self.check_grid_overflow(&sub_grid)?;
-        self.check_grid_bounds(index)?;
+        self.check_grid_bounds(dst)?;
 
         for sub_index in sub_grid.enumerate() {
             if let Ok(subv) = sub_grid.get(sub_index) {
                 // Sum origin of subgrid and dest cells
-                let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+                let dest = (dst.0 + sub_index.0, dst.1 + sub_index.1);
 
                 // Get the destiny
                 let destv = self.get(dest)?;
@@ -403,8 +399,8 @@ impl<T: Copy + Clone> Grid<T> {
     }
 
     /// Internally checks if the index (x, y) is inside of the bounds of the grid
-    fn check_grid_bounds(&self, index: (i32, i32)) -> Result<(), GridErr> {
-        let (x, y) = index;
+    fn check_grid_bounds(&self, dst: (i32, i32)) -> Result<(), GridErr> {
+        let (x, y) = dst;
 
         if x < 0 || x >= self.rows {
             return Err(GridErr::OutOfGrid);
@@ -426,13 +422,13 @@ impl<T: Copy + Clone> Grid<T> {
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
     /// assert!(grid.set((0, 0), &1).is_ok());
     /// ```
-    pub fn set(&mut self, index: (i32, i32), value: &T) -> Result<(), GridErr>
+    pub fn set(&mut self, dst: (i32, i32), value: &T) -> Result<(), GridErr>
     where
         T: Copy,
     {
-        let (x, y) = index;
+        let (x, y) = dst;
 
-        self.check_grid_bounds(index)?;
+        self.check_grid_bounds(dst)?;
 
         if let Some(cell) = self.cells.get_mut((x * self.rows + y) as usize) {
             *cell = *value;
@@ -464,7 +460,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```
     pub fn set_with_rules<R>(
         &mut self,
-        index: (i32, i32),
+        dst: (i32, i32),
         value: &T,
         rules: Vec<R>,
     ) -> Result<(), GridErr>
@@ -472,9 +468,9 @@ impl<T: Copy + Clone> Grid<T> {
         R: Fn((i32, i32), &T) -> Result<(), GridErr>,
     {
         for rule in rules.iter() {
-            rule(index, value)?;
+            rule(dst, value)?;
         }
-        self.set(index, value)?;
+        self.set(dst, value)?;
         Ok(())
     }
 
@@ -489,10 +485,10 @@ impl<T: Copy + Clone> Grid<T> {
     /// *v = 50;
     /// assert_eq!(grid.get((0, 0)).unwrap_or(&0), &50);
     /// ```
-    pub fn get_mut(&mut self, index: (i32, i32)) -> Result<&mut T, GridErr> {
-        let (x, y) = index;
+    pub fn get_mut(&mut self, src: (i32, i32)) -> Result<&mut T, GridErr> {
+        let (x, y) = src;
 
-        self.check_grid_bounds(index)?;
+        self.check_grid_bounds(src)?;
 
         Ok(self.cells.get_mut((x * self.rows + y) as usize).unwrap())
     }
@@ -507,10 +503,10 @@ impl<T: Copy + Clone> Grid<T> {
     /// let v = grid.get((0, 0));
     /// assert_eq!(v, Ok(&1));
     /// ```
-    pub fn get(&self, index: (i32, i32)) -> Result<&T, GridErr> {
-        let (x, y) = index;
+    pub fn get(&self, src: (i32, i32)) -> Result<&T, GridErr> {
+        let (x, y) = src;
 
-        self.check_grid_bounds(index)?;
+        self.check_grid_bounds(src)?;
 
         Ok(self.cells.get((x * self.rows + y) as usize).unwrap())
     }
@@ -524,11 +520,11 @@ impl<T: Copy + Clone> Grid<T> {
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
     /// assert_eq!(grid.mov((0, 0), (1, 1)), Ok(()));
     /// ```
-    pub fn mov(&mut self, index: (i32, i32), dest: (i32, i32)) -> Result<(), GridErr> {
-        self.check_grid_bounds(index)?;
+    pub fn mov(&mut self, src: (i32, i32), dest: (i32, i32)) -> Result<(), GridErr> {
+        self.check_grid_bounds(src)?;
         self.check_grid_bounds(dest)?;
-        let prev = *self.get_mut(index).unwrap();
-        self.set(index, &self.initial_value.clone())?;
+        let prev = *self.get_mut(src).unwrap();
+        self.set(src, &self.initial_value.clone())?;
         self.set(dest, &prev)?;
 
         Ok(())
@@ -562,24 +558,24 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```
     pub fn mov_with_rules<R>(
         &mut self,
-        index: (i32, i32),
-        dest: (i32, i32),
+        src: (i32, i32),
+        dst: (i32, i32),
         rules: Vec<R>,
     ) -> Result<(), GridErr>
     where
         R: Fn((i32, i32), &T) -> Result<(), GridErr>,
     {
-        self.check_grid_bounds(index)?;
-        self.check_grid_bounds(dest)?;
-        let prev = *self.get_mut(index).unwrap();
+        self.check_grid_bounds(src)?;
+        self.check_grid_bounds(dst)?;
+        let prev = *self.get_mut(src).unwrap();
 
-        let destv = self.get(dest)?;
+        let destv = self.get(dst)?;
         for rule in rules {
-            rule(dest, destv)?;
+            rule(dst, destv)?;
         }
 
-        self.set(index, &self.initial_value.clone())?;
-        self.set(dest, &prev)?;
+        self.set(src, &self.initial_value.clone())?;
+        self.set(dst, &prev)?;
 
         Ok(())
     }
@@ -599,11 +595,11 @@ impl<T: Copy + Clone> Grid<T> {
     /// let mut grid = das_grid::Grid::new(2, 2, 1);
     /// assert_eq!(grid.mov_to((0, 0), das_grid::MoveDirection::Right), Ok(()));
     /// ```
-    pub fn mov_to(&mut self, index: (i32, i32), direction: MoveDirection) -> Result<(), GridErr> {
-        let (x, y) = index;
-        self.check_grid_bounds(index)?;
+    pub fn mov_to(&mut self, src: (i32, i32), dst_direction: MoveDirection) -> Result<(), GridErr> {
+        let (x, y) = src;
+        self.check_grid_bounds(src)?;
 
-        let (xx, yy) = match direction {
+        let (xx, yy) = match dst_direction {
             MoveDirection::Up => MOVE_UP,
             MoveDirection::Down => MOVE_DOWN,
             MoveDirection::Left => MOVE_LEFT,
@@ -613,8 +609,8 @@ impl<T: Copy + Clone> Grid<T> {
         let dest = (x + xx, y + yy);
         self.check_grid_bounds(dest)?;
 
-        let prev = *self.get_mut(index).unwrap();
-        self.set(index, &self.initial_value.clone())?;
+        let prev = *self.get_mut(src).unwrap();
+        self.set(src, &self.initial_value.clone())?;
         self.set(dest, &prev)?;
 
         Ok(())
@@ -650,17 +646,17 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```
     pub fn mov_to_with_rules<R>(
         &mut self,
-        index: (i32, i32),
-        direction: MoveDirection,
+        src: (i32, i32),
+        dst_direction: MoveDirection,
         rules: Vec<R>,
     ) -> Result<(), GridErr>
     where
         R: Fn((i32, i32), &T) -> Result<(), GridErr>,
     {
-        let (x, y) = index;
-        self.check_grid_bounds(index)?;
+        let (x, y) = src;
+        self.check_grid_bounds(src)?;
 
-        let (xx, yy) = match direction {
+        let (xx, yy) = match dst_direction {
             MoveDirection::Up => MOVE_UP,
             MoveDirection::Down => MOVE_DOWN,
             MoveDirection::Left => MOVE_LEFT,
@@ -675,8 +671,8 @@ impl<T: Copy + Clone> Grid<T> {
             rule(dest, destv)?;
         }
 
-        let prev = *self.get_mut(index).unwrap();
-        self.set(index, &self.initial_value.clone())?;
+        let prev = *self.get_mut(src).unwrap();
+        self.set(src, &self.initial_value.clone())?;
         self.set(dest, &prev)?;
 
         Ok(())
@@ -815,17 +811,17 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```
     pub fn fill_subgrid(
         &mut self,
-        index: (i32, i32),
+        dst: (i32, i32),
         rows: i32,
         cols: i32,
         value: &T,
     ) -> Result<Grid<T>, GridErr> {
-        self.check_grid_bounds(index)?;
+        self.check_grid_bounds(dst)?;
         let sub_grid = Grid::new(rows, cols, self.initial_value);
         self.check_grid_overflow(&sub_grid)?;
 
         for sub_index in sub_grid.enumerate() {
-            let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+            let dest = (dst.0 + sub_index.0, dst.1 + sub_index.1);
             match self.set(dest, value) {
                 Ok(_) => (),
                 _ => (),
