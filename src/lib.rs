@@ -309,7 +309,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```.rust
     /// let mut grid = das_grid::Grid::new_from_vector(4, 4, (1..=16).collect());
     /// let sub_grid = grid.get_subgrid((2, 2), 2, 2).unwrap();
-    /// assert_eq!(sub_grid.get_flatten_cells(), vec![11, 12, 15, 16]);
+    /// assert_eq!(sub_grid.get_flatten_grid(), vec![11, 12, 15, 16]);
     /// ```
     pub fn get_subgrid(&self, index: (i32, i32), rows: i32, cols: i32) -> Result<Grid<T>, GridErr> {
         self.check_grid_bounds(index)?;
@@ -534,6 +534,56 @@ impl<T: Copy + Clone> Grid<T> {
         Ok(())
     }
 
+    /// Moves a given value from position (x, y) to destiny position (x, y)
+    /// Only if no rule return error
+    ///
+    /// Be careful if the value is out of the bounds of grid it will return an error
+    /// with the type of GridErr::OutOfGrid
+    ///
+    /// And if a rule some rule failed it will return GridErr::RuleFailed
+    ///
+    /// ```.rust
+    /// let mut grid = das_grid::Grid::new(2, 2, 0);
+    /// assert!(grid.set((0, 1), &1).is_ok());
+    ///
+    /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
+    ///     if *value == 1 {
+    ///         return Err(das_grid::GridErr::RuleFailed);
+    ///     }
+    ///     Ok(())
+    /// };
+    ///
+    /// assert!(
+    ///     grid.mov_with_rules((0, 0), (0, 1), vec![rule_not_1])
+    ///         .err()
+    ///         .unwrap()
+    ///         == das_grid::GridErr::RuleFailed
+    /// );
+    /// ```
+    pub fn mov_with_rules<R>(
+        &mut self,
+        index: (i32, i32),
+        dest: (i32, i32),
+        rules: Vec<R>,
+    ) -> Result<(), GridErr>
+    where
+        R: Fn((i32, i32), &T) -> Result<(), GridErr>,
+    {
+        self.check_grid_bounds(index)?;
+        self.check_grid_bounds(dest)?;
+        let prev = *self.get_mut(index).unwrap();
+
+        let destv = self.get(dest)?;
+        for rule in rules {
+            rule(dest, destv)?;
+        }
+
+        self.set(index, &self.initial_value.clone())?;
+        self.set(dest, &prev)?;
+
+        Ok(())
+    }
+
     /// Moves a given value from position (x, y) to another position based on the direction
     ///
     /// The directions can be Left, Right, Top, Down:
@@ -728,10 +778,19 @@ impl<T: Copy + Clone> Grid<T> {
     ///
     /// ```.rust
     /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
-    /// assert_eq!(g.get_flatten_cells(), vec![1,2,3,4]);
+    /// assert_eq!(g.get_flatten_grid(), vec![1,2,3,4]);
     /// ```
-    pub fn get_flatten_cells(&self) -> Vec<T> {
+    pub fn get_flatten_grid(&self) -> Vec<T> {
         self.cells.clone()
+    }
+
+    /// Fill the grid with the given value
+    ///
+    /// ```.rust
+    ///
+    /// ```
+    pub fn fill_grid(&mut self, value: T) {
+        self.cells.fill(value);
     }
 }
 
