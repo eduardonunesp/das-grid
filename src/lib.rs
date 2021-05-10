@@ -157,10 +157,10 @@ impl fmt::Display for GridErr {
 
 /// Represents the possible direction to move
 ///
-/// MoveDirection::Right (1, 0)
-/// MoveDirection::Left (-1, 0)
-/// MoveDirection::Up (0, -1)
-/// MoveDirection::Down (0, 1)
+/// MoveDirection::Right
+/// MoveDirection::Left
+/// MoveDirection::Up
+/// MoveDirection::Down
 #[derive(Debug, PartialEq, Eq)]
 pub enum MoveDirection {
     Right,
@@ -169,17 +169,17 @@ pub enum MoveDirection {
     Down,
 }
 
-/// Represent move to right position on Das Grid (1, 0)
-pub const MOVE_RIGHT: (i32, i32) = (1, 0);
+/// Represent move to right position on Das Grid (0, 1)
+pub const MOVE_RIGHT: (i32, i32) = (0, 1);
 
-/// Represent move to left position on Das Grid (-1, 0)
-pub const MOVE_LEFT: (i32, i32) = (-1, 0);
+/// Represent move to left position on Das Grid (0, -1)
+pub const MOVE_LEFT: (i32, i32) = (0, -1);
 
-/// Represent move to up position on Das Grid (0, -1)
-pub const MOVE_UP: (i32, i32) = (0, -1);
+/// Represent move to up position on Das Grid (-1, 0)
+pub const MOVE_UP: (i32, i32) = (-1, 0);
 
-/// Represent move to down position on Das Grid (0, 1)
-pub const MOVE_DOWN: (i32, i32) = (0, 1);
+/// Represent move to down position on Das Grid (1, 0)
+pub const MOVE_DOWN: (i32, i32) = (1, 0);
 
 /// Stores the grid values and the cells
 /// The grid itself representation is a flatten vector which is transformed
@@ -434,7 +434,7 @@ impl<T: Copy + Clone> Grid<T> {
 
         self.check_grid_bounds(index)?;
 
-        if let Some(cell) = self.cells.get_mut((x + (y * self.rows)) as usize) {
+        if let Some(cell) = self.cells.get_mut((x * self.rows + y) as usize) {
             *cell = *value;
         }
 
@@ -494,7 +494,7 @@ impl<T: Copy + Clone> Grid<T> {
 
         self.check_grid_bounds(index)?;
 
-        Ok(self.cells.get_mut((x + (y * self.rows)) as usize).unwrap())
+        Ok(self.cells.get_mut((x * self.rows + y) as usize).unwrap())
     }
 
     /// Gets a give value to the position (x, y)
@@ -512,7 +512,7 @@ impl<T: Copy + Clone> Grid<T> {
 
         self.check_grid_bounds(index)?;
 
-        Ok(self.cells.get((x + (y * self.rows)) as usize).unwrap())
+        Ok(self.cells.get((x * self.rows + y) as usize).unwrap())
     }
 
     /// Moves a given value from position (x, y) to destiny position (x, y)
@@ -638,7 +638,7 @@ impl<T: Copy + Clone> Grid<T> {
     ///
     /// ```.rust
     /// let mut g = das_grid::Grid::new(2, 2, 0);
-    /// g.set((1, 0), &1);
+    /// g.set((0, 1), &1);
     /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
     ///     if *value == 1 {
     ///         return Err(das_grid::GridErr::RuleFailed);
@@ -738,24 +738,6 @@ impl<T: Copy + Clone> Grid<T> {
             .collect::<Vec<_>>()
     }
 
-    /// Returns the type vector with the values from the row
-    ///
-    /// If the row idx is wrong it can return the error GridErr::OutOfGrid
-    ///
-    /// ```.rust
-    /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
-    /// let row = g.get_row(1).unwrap();
-    /// assert_eq!(row, vec![3, 4]);
-    /// ```
-    pub fn get_row(&self, row_idx: i32) -> Result<Vec<T>, GridErr> {
-        let mut vec_result: Vec<T> = vec![];
-        for idx in (0..self.rows).into_iter() {
-            let v = self.get((idx, row_idx))?;
-            vec_result.push(*v);
-        }
-        Ok(vec_result)
-    }
-
     /// Returns the type vector with the values from the col
     ///
     /// If the col idx is wrong it can return the error GridErr::OutOfGrid
@@ -768,7 +750,25 @@ impl<T: Copy + Clone> Grid<T> {
     pub fn get_col(&self, col_idx: i32) -> Result<Vec<T>, GridErr> {
         let mut vec_result: Vec<T> = vec![];
         for idx in (0..self.cols).into_iter() {
-            let v = self.get((col_idx, idx))?;
+            let v = self.get((idx, col_idx))?;
+            vec_result.push(*v);
+        }
+        Ok(vec_result)
+    }
+
+    /// Returns the type vector with the values from the row
+    ///
+    /// If the row idx is wrong it can return the error GridErr::OutOfGrid
+    ///
+    /// ```.rust
+    /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
+    /// let row = g.get_row(1).unwrap();
+    /// assert_eq!(row, vec![3, 4]);
+    /// ```
+    pub fn get_row(&self, row_idx: i32) -> Result<Vec<T>, GridErr> {
+        let mut vec_result: Vec<T> = vec![];
+        for idx in (0..self.rows).into_iter() {
+            let v = self.get((row_idx, idx))?;
             vec_result.push(*v);
         }
         Ok(vec_result)
@@ -791,6 +791,14 @@ impl<T: Copy + Clone> Grid<T> {
     /// ```
     pub fn fill_grid(&mut self, value: T) {
         self.cells.fill(value);
+    }
+
+    #[allow(dead_code)]
+    pub(crate) fn debug(&self)
+    where
+        T: std::fmt::Display,
+    {
+        println!("{:?}", self)
     }
 }
 
