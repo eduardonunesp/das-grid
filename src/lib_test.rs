@@ -98,13 +98,13 @@ fn test_move_to() {
     g.set((0, 0), &1);
 
     let ret = g.mov_to((0, 0), MoveDirection::Right);
-    assert!(g.get((1, 0)).unwrap() == &1);
+    assert!(g.get((0, 1)).unwrap() == &1);
     assert!(ret.is_ok());
 
-    let ret = g.mov_to((1, 0), MoveDirection::Right);
+    let ret = g.mov_to((0, 1), MoveDirection::Right);
     assert!(ret.unwrap_err() == GridErr::OutOfGrid);
 
-    let ret = g.mov_to((1, 0), MoveDirection::Left);
+    let ret = g.mov_to((0, 1), MoveDirection::Left);
     assert!(g.get((0, 0)).unwrap() == &1);
 
     let ret = g.mov_to((0, 0), MoveDirection::Left);
@@ -116,10 +116,10 @@ fn test_move_to() {
     let ret = g.mov_to((0, 0), MoveDirection::Down);
     assert!(ret.is_ok());
 
-    let ret = g.mov_to((0, 1), MoveDirection::Down);
+    let ret = g.mov_to((1, 0), MoveDirection::Down);
     assert!(ret.unwrap_err() == GridErr::OutOfGrid);
 
-    let ret = g.mov_to((0, 1), MoveDirection::Right);
+    let ret = g.mov_to((1, 0), MoveDirection::Right);
     assert!(ret.is_ok());
 
     let ret = g.mov_to((1, 1), MoveDirection::Right);
@@ -222,7 +222,7 @@ fn test_get_subgrid() {
 #[test]
 fn test_mov_to_with_rules() {
     let mut g = Grid::new(2, 2, 0);
-    g.set((1, 0), &1);
+    g.set((0, 1), &1);
 
     let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
         if *value == 1 {
@@ -234,3 +234,12 @@ fn test_mov_to_with_rules() {
     let ret = g.mov_to_with_rules((0, 0), MoveDirection::Right, vec![rule_not_1]);
     assert!(ret.is_err());
 }
+
+// #[test]
+// fn test_generic() {
+//     let mut g = Grid::new(3, 3, 0);
+//     g.set((0, 1), &1);
+//     g.debug();
+//     println!("{:?}", g.mov_to((0, 1), MoveDirection::Right));
+//     g.debug();
+// }
