@@ -40,14 +40,13 @@ g.get((0, 0)).unwrap(); // ouputs: "a"
 ```
 
 ```rust
-use std::fmt::Display;
+extern crate das_grid;
 
 // Your own enum, much better to track grid values
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Pawn {
     None,
     Player,
-    Enemy,
 }
 
 impl std::fmt::Display for Pawn {
@@ -55,26 +54,40 @@ impl std::fmt::Display for Pawn {
         match *self {
             Pawn::None => write!(f, "None"),
             Pawn::Player => write!(f, "Player"),
-            Pawn::Enemy => write!(f, "Enemy"),
         }
     }
 }
 
-// Initialize empty grid
-let mut g: das_grid::Grid<Pawn> = das_grid::Grid::new(10, 10, Pawn::None);
+fn main() -> Result<(), das_grid::GridErr> {
+    // Initialize empty grid
+    let mut g: das_grid::Grid<Pawn> = das_grid::Grid::new(8, 8, Pawn::None);
 
-// Set the Player on position 5,5
-g.set((5, 5), &Pawn::Player);
+    // Set the Player on position 5,5
+    g.set((5, 5), &Pawn::Player)?;
 
-// Move the player to right
-if let Ok(()) = g.mov_to((5, 5), das_grid::MoveDirection::Right) {
-    // "The pawn on 6,5 is Player"
-    println!("The pawn on 6,5 is {}", g.get((6, 5)).unwrap());
+    println!("Grid initial state {:?}", g);
+
+    // Move the player to right
+    if let Ok(()) = g.mov_to((5, 5), das_grid::MoveDirection::Right) {
+        // "The pawn on 5,6 is Player"
+        println!("The pawn on 5,6 is {}", g.get((6, 5)).unwrap());
+    }
+
+    println!("Grid initial end state {:?}", g);
+
+    Ok(())
 }
-
 ```
 
 > The `mov_to` function can returns `Result<(), OutOfGridErr>` if the attept of move is out of the bounds of the grid
+
+## Example
+
+To build and run an example:
+
+```bash
+cargo run --example astroblasto
+```
 
 ### Moving cells
 
