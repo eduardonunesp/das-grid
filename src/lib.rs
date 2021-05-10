@@ -24,7 +24,7 @@ Das Grid offers:
 
 ```rust
 // Creates a 10x10 grid with 0 as default value for each cell
-let mut g = das_grid::Grid::new(10, 10, 0);
+let mut g = das_grid::Grid::new((10, 10), (1., 1.), 0);
 
 // Set the the value 1 at position x: 5 and y: 5
 g.set((5, 5), &1);
@@ -34,13 +34,11 @@ g.set((5, 5), &1);
 
 ```rust
 // Using &str instead of i32
-let mut g: das_grid::Grid<&str> = das_grid::Grid::new(10, 10, "a");
+let mut g: das_grid::Grid<&str> = das_grid::Grid::new((10, 10), (1., 1.), "a");
 g.get((0, 0)).unwrap(); // ouputs: "a"
 ```
 
 ```rust
-use std::fmt::Display;
-
 // Your own enum, much better to track grid values
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Pawn {
@@ -60,7 +58,7 @@ impl std::fmt::Display for Pawn {
 }
 
 // Initialize empty grid
-let mut g: das_grid::Grid<Pawn> = das_grid::Grid::new(10, 10, Pawn::None);
+let mut g: das_grid::Grid<Pawn> = das_grid::Grid::new((10, 10), (1., 1.), Pawn::None);
 
 // Set the Player on position 5,5
 g.set((5, 5), &Pawn::Player);
@@ -81,7 +79,7 @@ Each tile of the grid is called cell and each cell is the type that you want, be
 
 ```rust
 // Creates a 5x5 grid with 0 as default value for each cell
-let mut g = das_grid::Grid::new(5, 5, 0);
+let mut g = das_grid::Grid::new((5, 5), (1., 1.), 0);
 
 // Print with special {:?} to see the contents of the grid
 println!("{:?}", g);
@@ -186,14 +184,14 @@ pub const MOVE_DOWN: (i32, i32) = (1, 0);
 /// So to create a grid with 4x4 (collums and rows)
 ///
 /// ```.rust
-/// let grid = das_grid::Grid::new(4, 4, 0);
+/// let grid = das_grid::Grid::new((4, 4), (1., 1.), 0);
 /// assert_eq!(grid.size(), 16);
 /// ```
 ///
 /// Or if you like let's say a Tetris style grid
 ///
 /// ```.rust
-/// let grid = das_grid::Grid::new(10, 20, 0);
+/// let grid = das_grid::Grid::new((20, 10), (32., 32.), 0);
 ///
 /// // And it will have 200 cells!
 /// assert_eq!(grid.size(), 200);
@@ -202,6 +200,7 @@ pub const MOVE_DOWN: (i32, i32) = (1, 0);
 pub struct Grid<T: Copy + Clone> {
     pub(crate) rows: i32,
     pub(crate) cols: i32,
+    pub(crate) cell_size: (f32, f32),
     pub(crate) initial_value: T,
     pub(crate) cells: Vec<T>,
 }
@@ -210,13 +209,15 @@ impl<T: Copy + Clone> Grid<T> {
     /// Creates a grid of size rows x columns with default value passed on the third parameter
     /// For example this will generate a 2x2 grid of value 1:
     /// ```.rust
-    /// let grid = das_grid::Grid::new(2, 2, 1);
+    /// let grid = das_grid::Grid::new((2, 2),(1., 1.), 1);
     /// assert_eq!(grid.size(), 4);
     /// ```
-    pub fn new(rows: i32, cols: i32, value: T) -> Self
+    pub fn new(frame_size: (i32, i32), cell_size: (f32, f32), value: T) -> Self
     where
         T: Clone + Copy,
     {
+        let (rows, cols) = frame_size;
+
         if (rows * cols) == 0 {
             panic!("0x0 grid is forbidden")
         }
@@ -229,16 +230,19 @@ impl<T: Copy + Clone> Grid<T> {
             cols,
             initial_value,
             cells,
+            cell_size,
         }
     }
 
     /// Creates a grid from a given vector with quadratic size
     /// For example this will generate a 2x2 grid
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
+    /// let mut grid = das_grid::Grid::new_from_vector((2, 2), (1.,1.), vec![1, 2, 3, 4]);
     /// assert_eq!(grid.size(), 4);
     /// ```
-    pub fn new_from_vector(rows: i32, cols: i32, vec: Vec<T>) -> Self {
+    pub fn new_from_vector(frame_size: (i32, i32), cell_size: (f32, f32), vec: Vec<T>) -> Self {
+        let (rows, cols) = frame_size;
+
         if vec.len() % 2 != 0 {
             panic!("The vector isn't multiple of 2");
         }
@@ -259,6 +263,7 @@ impl<T: Copy + Clone> Grid<T> {
             cols,
             initial_value,
             cells,
+            cell_size,
         }
     }
 
@@ -268,8 +273,8 @@ impl<T: Copy + Clone> Grid<T> {
     /// Or if the dest x, y grid is out of bounds it return error GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut grid: das_grid::Grid<i32> = das_grid::Grid::new(10, 10, 0);
-    /// let sub_grid: das_grid::Grid<i32> = das_grid::Grid::new(2, 2, 1);
+    /// let mut grid: das_grid::Grid<i32> = das_grid::Grid::new((10, 10), (1., 1.), 0);
+    /// let sub_grid: das_grid::Grid<i32> = das_grid::Grid::new((2, 2),(1., 1.), 1);
     /// assert!(grid.stamp_subgrid((5, 5), sub_grid).is_ok());
     /// assert_eq!(grid.get((5, 5)).unwrap(), &1);
     /// assert_eq!(grid.get((5, 6)).unwrap(), &1);
@@ -303,13 +308,13 @@ impl<T: Copy + Clone> Grid<T> {
     /// Or if the dest x, y grid is out of bounds it return error GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new_from_vector(4, 4, (1..=16).collect());
+    /// let mut grid = das_grid::Grid::new_from_vector((4, 4), (1., 1.), (1..=16).collect());
     /// let sub_grid = grid.get_subgrid((2, 2), 2, 2).unwrap();
     /// assert_eq!(sub_grid.get_flatten_grid(), vec![11, 12, 15, 16]);
     /// ```
     pub fn get_subgrid(&self, src: (i32, i32), rows: i32, cols: i32) -> Result<Grid<T>, GridErr> {
         self.check_grid_bounds(src)?;
-        let mut sub_grid = Grid::new(rows, cols, self.initial_value);
+        let mut sub_grid = Grid::new((rows, cols), self.cell_size, self.initial_value);
         self.check_grid_overflow(&sub_grid)?;
 
         for sub_index in sub_grid.enumerate() {
@@ -335,8 +340,8 @@ impl<T: Copy + Clone> Grid<T> {
     /// And if a rule some rule failed it will return GridErr::RuleFailed
     ///
     /// ```.rust
-    /// let mut grid: das_grid::Grid<i32> = das_grid::Grid::new(10, 10, 1);
-    /// let sub_grid: das_grid::Grid<i32> = das_grid::Grid::new(2, 2, 1);
+    /// let mut grid: das_grid::Grid<i32> = das_grid::Grid::new((10, 10), (1., 1.), 1);
+    /// let sub_grid: das_grid::Grid<i32> = das_grid::Grid::new((2, 2),(1., 1.), 1);
     ///
     /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
     ///     if *value == 1 {
@@ -419,7 +424,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(2, 2, 1);
+    /// let mut grid = das_grid::Grid::new((2, 2),(1., 1.), 1);
     /// assert!(grid.set((0, 0), &1).is_ok());
     /// ```
     pub fn set(&mut self, dst: (i32, i32), value: &T) -> Result<(), GridErr>
@@ -441,7 +446,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Only if no rule return error
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(2, 2, 0);
+    /// let mut grid = das_grid::Grid::new((2, 2),(1., 1.), 0);
     /// assert!(grid.set((0, 1), &1).is_ok());
     ///
     /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
@@ -480,7 +485,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(2, 2, 1);
+    /// let mut grid = das_grid::Grid::new((2, 2),(1., 1.), 1);
     /// let mut v = grid.get_mut((0, 0)).expect("cannnot get pos at (0, 0)");
     /// *v = 50;
     /// assert_eq!(grid.get((0, 0)).unwrap_or(&0), &50);
@@ -499,7 +504,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let grid = das_grid::Grid::new(2, 2, 1);
+    /// let grid = das_grid::Grid::new((2, 2),(1., 1.), 1);
     /// let v = grid.get((0, 0));
     /// assert_eq!(v, Ok(&1));
     /// ```
@@ -517,7 +522,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(2, 2, 1);
+    /// let mut grid = das_grid::Grid::new((2, 2),(1., 1.), 1);
     /// assert_eq!(grid.mov((0, 0), (1, 1)), Ok(()));
     /// ```
     pub fn mov(&mut self, src: (i32, i32), dest: (i32, i32)) -> Result<(), GridErr> {
@@ -539,7 +544,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// And if a rule some rule failed it will return GridErr::RuleFailed
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(2, 2, 0);
+    /// let mut grid = das_grid::Grid::new((2, 2),(1., 1.), 0);
     /// assert!(grid.set((0, 1), &1).is_ok());
     ///
     /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
@@ -592,7 +597,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(2, 2, 1);
+    /// let mut grid = das_grid::Grid::new((2, 2),(1., 1.), 1);
     /// assert_eq!(grid.mov_to((0, 0), das_grid::MoveDirection::Right), Ok(()));
     /// ```
     pub fn mov_to(&mut self, src: (i32, i32), dst_direction: MoveDirection) -> Result<(), GridErr> {
@@ -633,7 +638,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// with the type of GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut g = das_grid::Grid::new(2, 2, 0);
+    /// let mut g = das_grid::Grid::new((2, 2),(1., 1.), 0);
     /// g.set((0, 1), &1);
     /// let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), das_grid::GridErr> {
     ///     if *value == 1 {
@@ -683,7 +688,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// For instance a 10x10 grid will return the size of 100
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(2, 2, 1);
+    /// let mut grid = das_grid::Grid::new((2, 2),(1., 1.), 1);
     /// assert_eq!(grid.size(), 4);
     /// ```
     pub fn size(&self) -> usize {
@@ -692,7 +697,7 @@ impl<T: Copy + Clone> Grid<T> {
 
     /// The rows of the grid
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(3, 2, 1);
+    /// let mut grid = das_grid::Grid::new((3, 2), (1., 1.), 1);
     /// assert_eq!(grid.rows(), 3);
     /// ```
     pub fn rows(&self) -> i32 {
@@ -701,7 +706,7 @@ impl<T: Copy + Clone> Grid<T> {
 
     /// The cols of the grid
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(3, 2, 1);
+    /// let mut grid = das_grid::Grid::new((3, 2), (1., 1.), 1);
     /// assert_eq!(grid.cols(), 2);
     /// ```
     pub fn cols(&self) -> i32 {
@@ -711,7 +716,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Returns the grid as a tuple of (x, y)
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new(3, 2, 1);
+    /// let mut grid = das_grid::Grid::new((3, 2), (1., 1.), 1);
     /// for (x, y) in grid.enumerate() {
     ///     println!("x {} y {}", x, y);
     /// }
@@ -724,11 +729,37 @@ impl<T: Copy + Clone> Grid<T> {
             .enumerate()
             .map(|(idx, _)| {
                 if idx as i32 % self.rows() == 0 && idx > 1 {
-                    x = 0;
-                    y += 1;
+                    y = 0;
+                    x += 1;
                 }
                 let res = (x, y);
-                x += 1;
+                y += 1;
+                res
+            })
+            .collect::<Vec<_>>()
+    }
+
+    /// Returns the grid as a tuple of (x, y) but with cell size calculated
+    ///
+    /// ```.rust
+    /// let mut grid = das_grid::Grid::new((3, 2), (1., 1.), 1);
+    /// for (x, y) in grid.enumerate() {
+    ///     println!("x {} y {}", x, y);
+    /// }
+    /// ```
+    pub fn enumerate_to_cell_size(&self) -> Vec<(f32, f32)> {
+        let mut x = 0;
+        let mut y = 0;
+        self.cells
+            .iter()
+            .enumerate()
+            .map(|(idx, _)| {
+                if idx as i32 % self.rows() == 0 && idx > 1 {
+                    y = 0;
+                    x += 1;
+                }
+                let res = (x as f32 * self.cell_size.0, y as f32 * self.cell_size.1);
+                y += 1;
                 res
             })
             .collect::<Vec<_>>()
@@ -739,7 +770,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// If the col idx is wrong it can return the error GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
+    /// let mut g = das_grid::Grid::new_from_vector((2, 2), (1.,1.), vec![1, 2, 3, 4]);
     /// let col = g.get_col(1).unwrap();
     /// assert_eq!(col, vec![2, 4]);
     /// ```
@@ -757,7 +788,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// If the row idx is wrong it can return the error GridErr::OutOfGrid
     ///
     /// ```.rust
-    /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
+    /// let mut g = das_grid::Grid::new_from_vector((2, 2), (1.,1.), vec![1, 2, 3, 4]);
     /// let row = g.get_row(1).unwrap();
     /// assert_eq!(row, vec![3, 4]);
     /// ```
@@ -773,7 +804,7 @@ impl<T: Copy + Clone> Grid<T> {
     /// Returns a clone of the internal representation of the grid
     ///
     /// ```.rust
-    /// let mut g = das_grid::Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
+    /// let mut g = das_grid::Grid::new_from_vector((2, 2), (1.,1.), vec![1, 2, 3, 4]);
     /// assert_eq!(g.get_flatten_grid(), vec![1,2,3,4]);
     /// ```
     pub fn get_flatten_grid(&self) -> Vec<T> {
@@ -802,8 +833,8 @@ impl<T: Copy + Clone> Grid<T> {
     /// If the area is greater than the main grid it return an error of GridErr::SubgridOverflow
     ///
     /// ```.rust
-    /// let mut grid = das_grid::Grid::new_from_vector(4, 4, (1..=16).collect());
-    /// grid.fill_subgrid((1, 1), 2, 2, &0);
+    /// let mut grid = das_grid::Grid::new_from_vector((4, 4), (1., 1.), (1..=16).collect());
+    /// grid.fill_subgrid((1, 1), (2, 2), &0);
     /// assert!(grid.get((1, 1)).unwrap() == &0);
     /// assert!(grid.get((1, 2)).unwrap() == &0);
     /// assert!(grid.get((2, 1)).unwrap() == &0);
@@ -812,12 +843,11 @@ impl<T: Copy + Clone> Grid<T> {
     pub fn fill_subgrid(
         &mut self,
         dst: (i32, i32),
-        rows: i32,
-        cols: i32,
+        frame_size: (i32, i32),
         value: &T,
     ) -> Result<Grid<T>, GridErr> {
         self.check_grid_bounds(dst)?;
-        let sub_grid = Grid::new(rows, cols, self.initial_value);
+        let sub_grid = Grid::new(frame_size, self.cell_size, self.initial_value);
         self.check_grid_overflow(&sub_grid)?;
 
         for sub_index in sub_grid.enumerate() {

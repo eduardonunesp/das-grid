@@ -13,3 +13,4 @@ parse-display-derive = "0.4.1"
 
 [dev-dependencies]
 pretty_assertions = "0.7.2"
+tetra = "0.6.3"

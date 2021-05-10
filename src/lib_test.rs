@@ -28,19 +28,19 @@ impl fmt::Display for Pawn {
 
 #[test]
 fn test_create_grid() {
-    let g = Grid::new(10, 10, 0);
+    let g = Grid::new((10, 10), (1., 1.), 0);
     assert_eq!(g.size(), 100);
 }
 
 #[test]
 fn test_create_grid_with_str() {
-    let g: Grid<&str> = Grid::new(10, 10, "a");
+    let g: Grid<&str> = Grid::new((10, 10), (1., 1.), "a");
     assert_eq!(g.get((0, 0)).unwrap(), &"a");
 }
 
 #[test]
 fn test_create_grid_with_enum() {
-    let mut g: Grid<Pawn> = Grid::new(10, 10, Pawn::None);
+    let mut g: Grid<Pawn> = Grid::new((10, 10), (1., 1.), Pawn::None);
     assert_eq!(g.get((0, 0)).unwrap(), &Pawn::None);
 
     g.set((5, 5), &Pawn::Player);
@@ -50,24 +50,24 @@ fn test_create_grid_with_enum() {
 #[test]
 #[should_panic]
 fn test_forbidden_grid_size() {
-    let g = Grid::new(0, 0, 0);
+    let g = Grid::new((0, 0), (1., 1.), 0);
     assert_eq!(g.size(), 0);
 }
 
 #[test]
 fn test_iterate_on_grid() {
-    let g = Grid::new(10, 10, 1);
+    let g = Grid::new((10, 10), (1., 1.), 1);
     assert_eq!(g.into_iter().sum::<i32>(), 100);
 }
 #[test]
 fn test_get_pos() {
-    let g = Grid::new(2, 2, 1);
+    let g = Grid::new((2, 2), (1., 1.), 1);
     assert_eq!(g.get((0, 0)).unwrap_or(&0), &1);
 }
 
 #[test]
 fn test_get_mut_pos() {
-    let mut g = Grid::new(2, 2, 1);
+    let mut g = Grid::new((2, 2), (1., 1.), 1);
     let p = g.get_mut((0, 0)).unwrap();
     *p = 50;
     assert_eq!(g.get((0, 0)).unwrap_or(&0), &50);
@@ -75,7 +75,7 @@ fn test_get_mut_pos() {
 
 #[test]
 fn test_set_value() {
-    let mut g = Grid::new(2, 2, 1);
+    let mut g = Grid::new((2, 2), (1., 1.), 1);
     let p = g.get_mut((0, 0)).unwrap();
     *p = 50;
     g.set((0, 0), &2);
@@ -84,7 +84,7 @@ fn test_set_value() {
 
 #[test]
 fn test_mov_cell() {
-    let mut g = Grid::new(2, 2, 0);
+    let mut g = Grid::new((2, 2), (1., 1.), 0);
     let mut count = 1;
     for c in &mut g {
         *c = count;
@@ -96,7 +96,7 @@ fn test_mov_cell() {
 
 #[test]
 fn test_move_to() {
-    let mut g = Grid::new(2, 2, 0);
+    let mut g = Grid::new((2, 2), (1., 1.), 0);
     g.set((0, 0), &1);
 
     let ret = g.mov_to((0, 0), MoveDirection::Right);
@@ -130,18 +130,18 @@ fn test_move_to() {
 
 #[test]
 fn test_enumerate() {
-    let mut grid: Grid<i32> = Grid::new(2, 2, 0);
+    let mut grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 0);
 
     let mut result: Vec<(i32, i32)> = vec![];
     for xy in grid.enumerate() {
         result.push(xy)
     }
-    assert_eq!(result, [(0, 0), (1, 0), (0, 1), (1, 1)])
+    assert_eq!(result, [(0, 0), (0, 1), (1, 0), (1, 1)])
 }
 
 #[test]
 fn test_iterators() {
-    let grid: Grid<i32> = Grid::new(2, 2, 0);
+    let grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 0);
 
     let mut result: Vec<i32> = vec![];
     for v in &grid {
@@ -153,7 +153,7 @@ fn test_iterators() {
 
 #[test]
 fn test_set_with_rules() {
-    let mut grid: Grid<i32> = Grid::new(2, 2, 0);
+    let mut grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 0);
     assert_eq!(grid.set((0, 1), &1).is_ok(), true);
 
     let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
@@ -173,8 +173,8 @@ fn test_set_with_rules() {
 
 #[test]
 fn test_stamp_subgrid() {
-    let mut grid: Grid<i32> = Grid::new(10, 10, 0);
-    let sub_grid: Grid<i32> = Grid::new(2, 2, 1);
+    let mut grid: Grid<i32> = Grid::new((10, 10), (1., 1.), 0);
+    let sub_grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 1);
     assert_eq!(grid.stamp_subgrid((5, 5), sub_grid).is_ok(), true);
     assert_eq!(grid.get((5, 5)).unwrap(), &1);
     assert_eq!(grid.get((5, 6)).unwrap(), &1);
@@ -184,8 +184,8 @@ fn test_stamp_subgrid() {
 
 #[test]
 fn test_stamp_subgrid_with_rules_1() {
-    let mut grid: Grid<i32> = Grid::new(10, 10, 1);
-    let sub_grid: Grid<i32> = Grid::new(2, 2, 1);
+    let mut grid: Grid<i32> = Grid::new((10, 10), (1., 1.), 1);
+    let sub_grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 1);
 
     let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
         if *value == 1 {
@@ -203,7 +203,7 @@ fn test_stamp_subgrid_with_rules_1() {
 
 #[test]
 fn test_get_row() {
-    let mut g = Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
+    let mut g = Grid::new_from_vector((2, 2), (1., 1.), vec![1, 2, 3, 4]);
     let row = g.get_row(1).unwrap();
     assert_eq!(row, vec![3, 4]);
     let col = g.get_col(1).unwrap();
@@ -212,20 +212,20 @@ fn test_get_row() {
 
 #[test]
 fn test_new_from_vec() {
-    let mut g = Grid::new_from_vector(2, 2, vec![1, 2, 3, 4]);
+    let mut g = Grid::new_from_vector((2, 2), (1., 1.), vec![1, 2, 3, 4]);
     assert_eq!(g.size(), 4);
 }
 
 #[test]
 fn test_get_subgrid() {
-    let mut grid = Grid::new_from_vector(4, 4, (1..=16).collect());
+    let mut grid = Grid::new_from_vector((4, 4), (1., 1.), (1..=16).collect());
     let sub_grid = grid.get_subgrid((2, 2), 2, 2).unwrap();
     assert_eq!(sub_grid.get_flatten_grid(), vec![11, 12, 15, 16]);
 }
 
 #[test]
 fn test_mov_to_with_rules() {
-    let mut g = Grid::new(2, 2, 0);
+    let mut g = Grid::new((2, 2), (1., 1.), 0);
     g.set((0, 1), &1);
 
     let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
@@ -241,8 +241,8 @@ fn test_mov_to_with_rules() {
 
 #[test]
 fn test_fill_subgrid() {
-    let mut grid = Grid::new_from_vector(4, 4, (1..=16).collect());
-    grid.fill_subgrid((1, 1), 2, 2, &0);
+    let mut grid = Grid::new_from_vector((4, 4), (1., 1.), (1..=16).collect());
+    grid.fill_subgrid((1, 1), (2, 2), &0);
     assert_eq!(grid.get((1, 1)).unwrap(), &0);
     assert_eq!(grid.get((1, 2)).unwrap(), &0);
     assert_eq!(grid.get((2, 1)).unwrap(), &0);
