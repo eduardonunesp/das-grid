@@ -800,6 +800,40 @@ impl<T: Copy + Clone> Grid<T> {
     {
         println!("{:?}", self)
     }
+
+    /// Fills the certain area of the grid with a given value
+    ///
+    /// If the area is greater than the main grid it return an error of GridErr::SubgridOverflow
+    ///
+    /// ```.rust
+    /// let mut grid = das_grid::Grid::new_from_vector(4, 4, (1..=16).collect());
+    /// grid.fill_subgrid((1, 1), 2, 2, &0);
+    /// assert!(grid.get((1, 1)).unwrap() == &0);
+    /// assert!(grid.get((1, 2)).unwrap() == &0);
+    /// assert!(grid.get((2, 1)).unwrap() == &0);
+    /// assert!(grid.get((2, 2)).unwrap() == &0);
+    /// ```
+    pub fn fill_subgrid(
+        &mut self,
+        index: (i32, i32),
+        rows: i32,
+        cols: i32,
+        value: &T,
+    ) -> Result<Grid<T>, GridErr> {
+        self.check_grid_bounds(index)?;
+        let sub_grid = Grid::new(rows, cols, self.initial_value);
+        self.check_grid_overflow(&sub_grid)?;
+
+        for sub_index in sub_grid.enumerate() {
+            let dest = (index.0 + sub_index.0, index.1 + sub_index.1);
+            match self.set(dest, value) {
+                Ok(_) => (),
+                _ => (),
+            }
+        }
+
+        Ok(sub_grid)
+    }
 }
 
 impl<'a, T: Copy + Clone> IntoIterator for &'a Grid<T> {

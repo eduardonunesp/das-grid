@@ -235,6 +235,16 @@ fn test_mov_to_with_rules() {
     assert!(ret.is_err());
 }
 
+#[test]
+fn test_fill_subgrid() {
+    let mut grid = Grid::new_from_vector(4, 4, (1..=16).collect());
+    grid.fill_subgrid((1, 1), 2, 2, &0);
+    assert!(grid.get((1, 1)).unwrap() == &0);
+    assert!(grid.get((1, 2)).unwrap() == &0);
+    assert!(grid.get((2, 1)).unwrap() == &0);
+    assert!(grid.get((2, 2)).unwrap() == &0);
+}
+
 // #[test]
 // fn test_generic() {
 //     let mut g = Grid::new(3, 3, 0);
