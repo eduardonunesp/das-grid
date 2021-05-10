@@ -37,7 +37,7 @@ impl State for GameState {
         graphics::clear(ctx, Color::BLACK);
 
         for (x, y) in self.grid.enumerate_to_cell_size() {
-            let dest = Vec2::new(128. + x, 64. + y);
+            let dest = Vec2::new(128. + x as f32, 64. + y as f32);
             self.rect.draw(ctx, dest);
         }
 
