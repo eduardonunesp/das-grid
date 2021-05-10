@@ -88,7 +88,21 @@ fn main() -> Result<(), das_grid::GridErr> {
 To build and run an example:
 
 ```bash
-cargo run --example astroblasto
+cargo run --example custom_values
+
+# Output
+
+# Initial state Grid { rows: 2, cols: 2, cells: [
+#  Player (x: 0 y: 0) None (x: 0 y: 1)
+#  None   (x: 1 y: 0) None (x: 1 y: 1)
+# ] }
+#
+# The pawn on 0, 1 is Player
+#
+# End state Grid { rows: 2, cols: 2, cells: [
+#  None (x: 0 y: 0) Player (x: 0 y: 1)
+#  None (x: 1 y: 0) None   (x: 1 y: 1)
+# ] }
 ```
 
 ### Moving cells
