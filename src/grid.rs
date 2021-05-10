@@ -395,7 +395,11 @@ impl<T: Copy + Clone> Grid<T> {
 
         self.check_grid_bounds(src)?;
 
-        Ok(self.cells.get((x * self.rows + y) as usize).unwrap())
+        let v = self
+            .cells
+            .get((x * self.rows + y) as usize)
+            .ok_or(GridErr::OutOfGrid)?;
+        Ok(v)
     }
 
     /// Moves a given value from position (x, y) to destiny position (x, y)
