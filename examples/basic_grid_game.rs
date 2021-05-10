@@ -84,7 +84,7 @@ impl State for GameState {
             window::quit(ctx);
         }
 
-        // Press the direciton to apply the move on the player
+        // Press the direction to apply the move on the player
 
         if input::is_key_pressed(ctx, Key::Right) {
             // If the move is ok it will move and return the next pos

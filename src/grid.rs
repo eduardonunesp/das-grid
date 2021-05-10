@@ -21,6 +21,8 @@ pub enum GridErr {
     RuleFailed,
     #[display("the subgrid cols or rows is greater than the parent grid")]
     SubgridOverflow,
+    #[display("the value isn't found at the position")]
+    ValueNotFound,
 }
 
 /// Represents the possible direction to move
@@ -376,7 +378,7 @@ impl<T: Copy + Clone> Grid<T> {
         let v = self
             .cells
             .get_mut((x * self.rows + y) as usize)
-            .ok_or(GridErr::OutOfGrid)?;
+            .ok_or(GridErr::ValueNotFound)?;
         Ok(v)
     }
 
@@ -398,7 +400,7 @@ impl<T: Copy + Clone> Grid<T> {
         let v = self
             .cells
             .get((x * self.rows + y) as usize)
-            .ok_or(GridErr::OutOfGrid)?;
+            .ok_or(GridErr::ValueNotFound)?;
         Ok(v)
     }
 
