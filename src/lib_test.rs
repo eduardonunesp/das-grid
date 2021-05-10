@@ -1,4 +1,6 @@
 #![allow(warnings, unused)]
+#[macro_use]
+use pretty_assertions::{assert_eq, assert_ne};
 
 use std::{
     borrow::BorrowMut,
@@ -7,7 +9,7 @@ use std::{
 
 use crate::{Grid, GridErr, MoveDirection};
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Pawn {
     None,
     Player,
@@ -27,40 +29,40 @@ impl fmt::Display for Pawn {
 #[test]
 fn test_create_grid() {
     let g = Grid::new(10, 10, 0);
-    assert!(g.size() == 100);
+    assert_eq!(g.size(), 100);
 }
 
 #[test]
 fn test_create_grid_with_str() {
     let g: Grid<&str> = Grid::new(10, 10, "a");
-    assert!(g.get((0, 0)).unwrap() == &"a");
+    assert_eq!(g.get((0, 0)).unwrap(), &"a");
 }
 
 #[test]
 fn test_create_grid_with_enum() {
     let mut g: Grid<Pawn> = Grid::new(10, 10, Pawn::None);
-    assert!(g.get((0, 0)).unwrap() == &Pawn::None);
+    assert_eq!(g.get((0, 0)).unwrap(), &Pawn::None);
 
     g.set((5, 5), &Pawn::Player);
-    assert!(g.mov_to((5, 5), MoveDirection::Right).is_ok());
+    assert_eq!(g.mov_to((5, 5), MoveDirection::Right).is_ok(), true);
 }
 
 #[test]
 #[should_panic]
 fn test_forbidden_grid_size() {
     let g = Grid::new(0, 0, 0);
-    assert!(g.size() == 0);
+    assert_eq!(g.size(), 0);
 }
 
 #[test]
 fn test_iterate_on_grid() {
     let g = Grid::new(10, 10, 1);
-    assert!(g.into_iter().sum::<i32>() == 100);
+    assert_eq!(g.into_iter().sum::<i32>(), 100);
 }
 #[test]
 fn test_get_pos() {
     let g = Grid::new(2, 2, 1);
-    assert!(g.get((0, 0)).unwrap_or(&0) == &1);
+    assert_eq!(g.get((0, 0)).unwrap_or(&0), &1);
 }
 
 #[test]
@@ -68,7 +70,7 @@ fn test_get_mut_pos() {
     let mut g = Grid::new(2, 2, 1);
     let p = g.get_mut((0, 0)).unwrap();
     *p = 50;
-    assert!(g.get((0, 0)).unwrap_or(&0) == &50);
+    assert_eq!(g.get((0, 0)).unwrap_or(&0), &50);
 }
 
 #[test]
@@ -77,7 +79,7 @@ fn test_set_value() {
     let p = g.get_mut((0, 0)).unwrap();
     *p = 50;
     g.set((0, 0), &2);
-    assert!(g.get((0, 0)).unwrap() == &2);
+    assert_eq!(g.get((0, 0)).unwrap(), &2);
 }
 
 #[test]
@@ -89,7 +91,7 @@ fn test_mov_cell() {
         count += 1;
     }
     g.mov((0, 0), (1, 1));
-    assert!(g.get((1, 1)).unwrap() == &1);
+    assert_eq!(g.get((1, 1)).unwrap(), &1);
 }
 
 #[test]
@@ -98,32 +100,32 @@ fn test_move_to() {
     g.set((0, 0), &1);
 
     let ret = g.mov_to((0, 0), MoveDirection::Right);
-    assert!(g.get((0, 1)).unwrap() == &1);
-    assert!(ret.is_ok());
+    assert_eq!(g.get((0, 1)).unwrap(), &1);
+    assert_eq!(ret.is_ok(), true);
 
     let ret = g.mov_to((0, 1), MoveDirection::Right);
-    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
+    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
 
     let ret = g.mov_to((0, 1), MoveDirection::Left);
-    assert!(g.get((0, 0)).unwrap() == &1);
+    assert_eq!(g.get((0, 0)).unwrap(), &1);
 
     let ret = g.mov_to((0, 0), MoveDirection::Left);
-    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
+    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
 
     let ret = g.mov_to((0, 0), MoveDirection::Up);
-    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
+    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
 
     let ret = g.mov_to((0, 0), MoveDirection::Down);
-    assert!(ret.is_ok());
+    assert_eq!(ret.is_ok(), true);
 
     let ret = g.mov_to((1, 0), MoveDirection::Down);
-    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
+    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
 
     let ret = g.mov_to((1, 0), MoveDirection::Right);
-    assert!(ret.is_ok());
+    assert_eq!(ret.is_ok(), true);
 
     let ret = g.mov_to((1, 1), MoveDirection::Right);
-    assert!(ret.unwrap_err() == GridErr::OutOfGrid);
+    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
 }
 
 #[test]
@@ -134,7 +136,7 @@ fn test_enumerate() {
     for xy in grid.enumerate() {
         result.push(xy)
     }
-    assert!(result == [(0, 0), (1, 0), (0, 1), (1, 1)])
+    assert_eq!(result, [(0, 0), (1, 0), (0, 1), (1, 1)])
 }
 
 #[test]
@@ -146,13 +148,13 @@ fn test_iterators() {
         result.push(*v);
     }
 
-    assert!(result == [0, 0, 0, 0]);
+    assert_eq!(result, [0, 0, 0, 0]);
 }
 
 #[test]
 fn test_set_with_rules() {
     let mut grid: Grid<i32> = Grid::new(2, 2, 0);
-    assert!(grid.set((0, 1), &1).is_ok());
+    assert_eq!(grid.set((0, 1), &1).is_ok(), true);
 
     let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
         if *value == 1 {
@@ -161,11 +163,11 @@ fn test_set_with_rules() {
         Ok(())
     };
 
-    assert!(
+    assert_eq!(
         grid.set_with_rules((0, 1), &1, vec![rule_not_1])
             .err()
-            .unwrap()
-            == GridErr::RuleFailed
+            .unwrap(),
+        GridErr::RuleFailed
     );
 }
 
@@ -173,11 +175,11 @@ fn test_set_with_rules() {
 fn test_stamp_subgrid() {
     let mut grid: Grid<i32> = Grid::new(10, 10, 0);
     let sub_grid: Grid<i32> = Grid::new(2, 2, 1);
-    assert!(grid.stamp_subgrid((5, 5), sub_grid).is_ok());
-    assert!(grid.get((5, 5)).unwrap() == &1);
-    assert!(grid.get((5, 6)).unwrap() == &1);
-    assert!(grid.get((6, 5)).unwrap() == &1);
-    assert!(grid.get((6, 6)).unwrap() == &1);
+    assert_eq!(grid.stamp_subgrid((5, 5), sub_grid).is_ok(), true);
+    assert_eq!(grid.get((5, 5)).unwrap(), &1);
+    assert_eq!(grid.get((5, 6)).unwrap(), &1);
+    assert_eq!(grid.get((6, 5)).unwrap(), &1);
+    assert_eq!(grid.get((6, 6)).unwrap(), &1);
 }
 
 #[test]
@@ -192,9 +194,11 @@ fn test_stamp_subgrid_with_rules_1() {
         Ok(())
     };
 
-    assert!(grid
-        .stamp_subgrid_with_rules((5, 5), sub_grid, vec![rule_not_1])
-        .is_err());
+    assert_eq!(
+        grid.stamp_subgrid_with_rules((5, 5), sub_grid, vec![rule_not_1])
+            .is_err(),
+        true
+    );
 }
 
 #[test]
@@ -232,17 +236,17 @@ fn test_mov_to_with_rules() {
     };
 
     let ret = g.mov_to_with_rules((0, 0), MoveDirection::Right, vec![rule_not_1]);
-    assert!(ret.is_err());
+    assert_eq!(ret.is_err(), true);
 }
 
 #[test]
 fn test_fill_subgrid() {
     let mut grid = Grid::new_from_vector(4, 4, (1..=16).collect());
     grid.fill_subgrid((1, 1), 2, 2, &0);
-    assert!(grid.get((1, 1)).unwrap() == &0);
-    assert!(grid.get((1, 2)).unwrap() == &0);
-    assert!(grid.get((2, 1)).unwrap() == &0);
-    assert!(grid.get((2, 2)).unwrap() == &0);
+    assert_eq!(grid.get((1, 1)).unwrap(), &0);
+    assert_eq!(grid.get((1, 2)).unwrap(), &0);
+    assert_eq!(grid.get((2, 1)).unwrap(), &0);
+    assert_eq!(grid.get((2, 2)).unwrap(), &0);
 }
 
 // #[test]
