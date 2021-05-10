@@ -20,7 +20,7 @@ fn main() -> Result<(), das_grid::GridErr> {
     println!("Initial state {:?}\n", g);
 
     // Move the player to right
-    if let Ok(()) = g.mov_to((0, 0), das_grid::MoveDirection::Right) {
+    if let Ok(_) = g.mov_to((0, 0), das_grid::MoveDirection::Right) {
         // "The pawn on 5,6 is Player"
         println!("The pawn on 0, 1 is {}\n", g.get((0, 1)).unwrap());
     }
