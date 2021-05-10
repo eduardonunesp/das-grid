@@ -587,10 +587,10 @@ impl<T: Copy + Clone> Grid<T> {
     /// Moves a given value from position (x, y) to another position based on the direction
     ///
     /// The directions can be Left, Right, Top, Down:
-    /// * DasGrid::MoveDirection::Left, translates to (-1, 0)
-    /// * DasGrid::MoveDirection::Right, translates to (1, 0)
-    /// * DasGrid::MoveDirection::Top, translates to (0, -1)
-    /// * DasGrid::MoveDirection::Down, translates to (0, 1)
+    /// * DasGrid::MoveDirection::Left, translates to (0, -1)
+    /// * DasGrid::MoveDirection::Right, translates to (0, 1)
+    /// * DasGrid::MoveDirection::Top, translates to (-1, 0)
+    /// * DasGrid::MoveDirection::Down, translates to (1, 0)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
     /// with the type of GridErr::OutOfGrid
@@ -628,10 +628,10 @@ impl<T: Copy + Clone> Grid<T> {
     /// And if a rule some rule failed it will return GridErr::RuleFailed
     ///
     /// The directions can be Left, Right, Top, Down:
-    /// * DasGrid::MoveDirection::Left, translates to (-1, 0)
-    /// * DasGrid::MoveDirection::Right, translates to (1, 0)
-    /// * DasGrid::MoveDirection::Top, translates to (0, -1)
-    /// * DasGrid::MoveDirection::Down, translates to (0, 1)
+    /// * DasGrid::MoveDirection::Left, translates to (0, -1)
+    /// * DasGrid::MoveDirection::Right, translates to (0, 1)
+    /// * DasGrid::MoveDirection::Top, translates to (-1, 0)
+    /// * DasGrid::MoveDirection::Down, translates to (1, 0)
     ///
     /// Be careful if the value is out of the bounds of grid it will return an error
     /// with the type of GridErr::OutOfGrid
