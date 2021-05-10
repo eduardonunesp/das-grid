@@ -544,7 +544,7 @@ impl<T: Copy + Clone> Grid<T> {
         src: (i32, i32),
         dst_direction: MoveDirection,
         rules: Vec<R>,
-    ) -> Result<(), GridErr>
+    ) -> Result<(i32, i32), GridErr>
     where
         R: Fn((i32, i32), &T) -> Result<(), GridErr>,
     {
@@ -570,7 +570,7 @@ impl<T: Copy + Clone> Grid<T> {
         self.set(src, &self.initial_value.clone())?;
         self.set(dest, &prev)?;
 
-        Ok(())
+        Ok(dest)
     }
 
     /// Get the size of grid based on cells length
