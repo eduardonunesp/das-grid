@@ -860,6 +860,16 @@ impl<T: Copy + Clone> Grid<T> {
 
         Ok(sub_grid)
     }
+
+    /// Return the cell_size specified in grid creation
+    ///
+    /// ```.rust
+    /// let grid = das_grid::Grid::new((4, 4), (10., 10.), 0);
+    /// assert_eq!(grid.get_cell_size(), (10., 10.))
+    /// ```
+    pub fn get_cell_size(&self) -> (f32, f32) {
+        self.cell_size
+    }
 }
 
 impl<'a, T: Copy + Clone> IntoIterator for &'a Grid<T> {
