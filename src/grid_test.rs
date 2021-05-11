@@ -165,7 +165,7 @@ fn test_set_with_rules() {
 fn test_stamp_subgrid() {
     let mut grid: Grid<i32> = Grid::new((10, 10), (1., 1.), 0);
     let sub_grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 1);
-    assert_eq!(grid.stamp_subgrid((5, 5), sub_grid).is_ok(), true);
+    assert_eq!(grid.stamp_subgrid((5, 5), &sub_grid).is_ok(), true);
     assert_eq!(grid.get((5, 5)).unwrap(), &1);
     assert_eq!(grid.get((5, 6)).unwrap(), &1);
     assert_eq!(grid.get((6, 5)).unwrap(), &1);
@@ -237,4 +237,44 @@ fn test_fill_subgrid() {
     assert_eq!(grid.get((1, 2)).unwrap(), &0);
     assert_eq!(grid.get((2, 1)).unwrap(), &0);
     assert_eq!(grid.get((2, 2)).unwrap(), &0);
+}
+
+#[test]
+fn test_rotate_cw() {
+    let mut grid = Grid::new_from_vector((3, 3), (1., 1.), (1..=9).collect());
+    let initial_cells = grid.cells.clone();
+
+    // Rotate matrix for times
+    for _ in (0..4) {
+        grid.rotate_cw();
+    }
+
+    let ending_position = grid.cells.clone();
+    assert_eq!(initial_cells, ending_position);
+
+    let mut grid = Grid::new_from_vector((4, 4), (1., 1.), (1..=16).collect());
+    let initial_cells = grid.cells.clone();
+
+    // Rotate matrix for times
+    for _ in (0..4) {
+        grid.rotate_cw();
+    }
+
+    let ending_position = grid.cells.clone();
+    assert_eq!(initial_cells, ending_position);
+}
+
+#[test]
+fn test_rotate_ccw() {
+    let mut grid = Grid::new_from_vector((3, 3), (1., 1.), (1..=9).collect());
+    let initial_cells = grid.cells.clone();
+
+    // Rotate matrix for times
+    for _ in (0..4) {
+        grid.rotate_ccw();
+        grid.debug();
+    }
+
+    let ending_position = grid.cells.clone();
+    assert_eq!(initial_cells, ending_position);
 }

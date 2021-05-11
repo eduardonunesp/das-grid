@@ -135,10 +135,6 @@ impl<T: Copy> Grid<T> {
         let frame_size = frame_size.into();
         let cell_size = cell_size.into();
 
-        if vec.len() % 2 != 0 {
-            panic!("The vector isn't multiple of 2");
-        }
-
         if vec.len() == 0 {
             panic!("0x0 grid is forbidden")
         }
@@ -150,12 +146,16 @@ impl<T: Copy> Grid<T> {
         let default_value = vec.first().unwrap().clone();
         let cells = vec.to_vec();
 
-        Self {
+        let mut ret = Grid {
             frame_size: (frame_size.rows, frame_size.cols),
             cell_size: (cell_size.width, cell_size.height),
             default_value,
             cells,
-        }
+        };
+
+        ret.rotate_cw();
+
+        ret
     }
 
     // Check if subgrid isn't bigger than the destiny grid
@@ -200,7 +200,7 @@ impl<T: Copy> Grid<T> {
     /// ```.rust
     /// let mut grid: das_grid::Grid<i32> = das_grid::Grid::new((10, 10), (1., 1.), 0);
     /// let sub_grid: das_grid::Grid<i32> = das_grid::Grid::new((2, 2),(1., 1.), 1);
-    /// assert!(grid.stamp_subgrid((5, 5), sub_grid).is_ok());
+    /// assert!(grid.stamp_subgrid((5, 5), &sub_grid).is_ok());
     /// assert_eq!(grid.get((5, 5)).unwrap(), &1);
     /// assert_eq!(grid.get((5, 6)).unwrap(), &1);
     /// assert_eq!(grid.get((6, 5)).unwrap(), &1);
@@ -214,7 +214,7 @@ impl<T: Copy> Grid<T> {
         for (x, y, _) in sub_grid.enumerate_with_value() {
             if let Ok(subv) = sub_grid.get((x, y)) {
                 // Sum origin of subgrid and dest cells
-                let dest = (yy + y, xx + x);
+                let dest = (xx + x, yy + y);
 
                 // Ok if the subgrid bleeds
                 match self.set(dest, &subv) {
@@ -267,7 +267,7 @@ impl<T: Copy> Grid<T> {
         for (x, y, _) in sub_grid.enumerate_with_value() {
             if let Ok(subv) = sub_grid.get((x, y)) {
                 // Sum origin of subgrid and dest cells
-                let dest = (yy + y, xx + x);
+                let dest = (xx + x, yy + y);
 
                 // Get the destiny
                 let destv = self.get(dest)?;
@@ -559,6 +559,60 @@ impl<T: Copy> Grid<T> {
             .get_mut((x * rows + y) as usize)
             .ok_or(DasGridError::ValueNotFound)?;
         Ok(v)
+    }
+
+    // Rotates the grid in place 90 degrees clock wise
+    pub fn rotate_cw(&mut self) -> Result {
+        if (self.cols() != self.rows()) {
+            return Err(DasGridError::FailedOnRotate);
+        }
+
+        let mut rotated_cells = self.cells.to_vec();
+        let mut indexes: Vec<usize> = vec![0; self.cells.len().pow(2)];
+        let n = self.cols() as usize;
+
+        for (i, _) in self.cells.iter().enumerate() {
+            if i < n {
+                indexes[i] = (i * n + (n - 1)) as usize;
+            } else {
+                indexes[i] = indexes[i - n] - 1;
+            }
+            rotated_cells[indexes[i]] = self.cells[i];
+        }
+
+        self.cells = rotated_cells;
+
+        Ok(())
+    }
+
+    // Rotates the grid in place 90 degrees clock wise
+    pub fn rotate_ccw(&mut self) -> Result {
+        if (self.cols() != self.rows()) {
+            return Err(DasGridError::FailedOnRotate);
+        }
+
+        let mut rotated_cells = self.cells.to_vec();
+        let mut indexes: Vec<usize> = vec![0; self.cells.len().pow(2)];
+        let n = self.cols() as usize;
+
+        for (i, _) in self.cells.iter().enumerate() {
+            if i < n {
+                indexes[i] = (i * n + (n - 1)) as usize;
+            } else {
+                indexes[i] = indexes[i - n] - 1;
+            }
+            rotated_cells[indexes[i]] = self.cells[i];
+        }
+
+        rotated_cells.reverse();
+        self.cells = rotated_cells;
+
+        Ok(())
+    }
+
+    // Fill entire grid
+    pub fn fill(&mut self, v: &T) {
+        self.cells.fill(*v);
     }
 }
 

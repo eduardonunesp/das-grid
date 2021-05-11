@@ -145,4 +145,6 @@ pub enum DasGridError {
     SubgridOverflow,
     #[display("the value isn't found at the position")]
     ValueNotFound,
+    #[display("can't rotate non quadratic matrix")]
+    FailedOnRotate,
 }

@@ -1,4 +1,4 @@
-use std::thread::current;
+#![allow(warnings, unused)]
 
 use tetra::{
     graphics::{
@@ -13,151 +13,23 @@ use tetra::{
 
 use das_grid::Grid;
 
-struct Player {
-    pos: (i32, i32),
-}
-
-struct Piece {
-    grid: Grid<i32>,
-}
-
-struct GameState {
-    rect: Mesh,
-    grid: Grid<i32>,
-    player: Player,
-    current_piece: Piece,
-}
+struct GameState {}
 
 impl GameState {
-    fn new(ctx: &mut Context) -> tetra::Result<GameState> {
-        // Create a grid with 20 rows and 10 cols with size of 32x32 pixels
-        let mut grid = Grid::new((16, 20), (32., 32.), 0);
-        let (cell_w, cell_h) = grid.get_cell_size();
-
-        // Create the player on pos 5,5
-        let player = Player { pos: (5, 5) };
-
-        // Set the player representation on grid
-        grid.set(player.pos, &1)
-            .expect("set value player at x = 5 and y = 5");
-
-        let current_piece = Piece {
-            grid: Grid::new_from_vector(
-                (4, 4),
-                (32., 32.),
-                vec![0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
-            ),
-        };
-
-        grid.stamp_subgrid((1, 1), &current_piece.grid);
-
-        // Rect used to represent grid cells
-        let rect = Mesh::rectangle(
-            ctx,
-            ShapeStyle::Fill,
-            Rectangle::new(0., 0., cell_w, cell_h),
-        )?;
-
-        // Nice lets start
-        Ok(Self {
-            rect,
-            grid,
-            player,
-            current_piece,
-        })
-    }
-
-    fn draw_grid(&mut self, ctx: &mut Context) {
-        let (cell_w, cell_h) = self.grid.get_cell_size();
-
-        // Enumerate each cell position at the grid
-        for (x, y, v) in self.grid.enumerate_with_valuef() {
-            // Dest of each element to draw
-            let dest = Vec2::new(10. + x * cell_w, 10. + y * cell_h);
-
-            // Draw the grid
-            self.rect.draw(ctx, dest);
-
-            // If type is 1 should draw the player
-            if v == &1 {
-                let mut dparam = DrawParams::new();
-                dparam.color = Color::RED;
-                dparam.position = dest;
-
-                // Draw the player
-                self.rect.draw(ctx, dparam);
-            }
-        }
-    }
-
-    fn handle_input(&mut self, ctx: &mut Context) {
-        if input::is_key_down(ctx, Key::Escape) {
-            window::quit(ctx);
-        }
-
-        // Press the direction to apply the move on the player
-
-        if input::is_key_pressed(ctx, Key::Right) {
-            // If the move is ok it will move and return the next pos
-            if let Ok(next_pos) = self
-                .grid
-                .mov_to(self.player.pos, das_grid::MoveDirection::Right)
-            {
-                // With the next pos we're going to update the player pos
-                self.player.pos = next_pos;
-            }
-        }
-
-        if input::is_key_pressed(ctx, Key::Left) {
-            // If the move is ok it will move and return the next pos
-            if let Ok(next_pos) = self
-                .grid
-                .mov_to(self.player.pos, das_grid::MoveDirection::Left)
-            {
-                // With the next pos we're going to update the player pos
-                self.player.pos = next_pos;
-            }
-        }
-
-        if input::is_key_pressed(ctx, Key::Up) {
-            // If the move is ok it will move and return the next pos
-            if let Ok(next_pos) = self
-                .grid
-                .mov_to(self.player.pos, das_grid::MoveDirection::Up)
-            {
-                // With the next pos we're going to update the player pos
-                self.player.pos = next_pos;
-            }
-        }
-
-        if input::is_key_pressed(ctx, Key::Down) {
-            // If the move is ok it will move and return the next pos
-            if let Ok(next_pos) = self
-                .grid
-                .mov_to(self.player.pos, das_grid::MoveDirection::Down)
-            {
-                // With the next pos we're going to update the player pos
-                self.player.pos = next_pos;
-            }
-        }
+    pub fn new(_: &mut Context) -> tetra::Result<GameState> {
+        Ok(GameState {})
     }
 }
 
 impl State for GameState {
     fn draw(&mut self, ctx: &mut Context) -> tetra::Result {
         graphics::clear(ctx, Color::BLACK);
-        self.draw_grid(ctx);
-        Ok(())
-    }
-
-    fn update(&mut self, ctx: &mut Context) -> tetra::Result {
-        self.handle_input(ctx);
         Ok(())
     }
 }
 
 fn main() -> tetra::Result {
-    ContextBuilder::new("Basic Grid Game", 800, 600)
+    ContextBuilder::new("Basic Grid Game", 600, 800)
         .build()?
         .run(GameState::new)
 }
