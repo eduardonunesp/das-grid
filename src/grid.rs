@@ -666,7 +666,7 @@ impl<T: Copy> Grid<T> {
         self.cells.clone()
     }
 
-    /// Returns the grid as a tuple of (x, y, v)
+    /// Returns the grid as a tuple of (x, y, v) as integer
     /// x, y as positions and v as the value of the cell
     ///
     /// ```.rust
@@ -694,7 +694,35 @@ impl<T: Copy> Grid<T> {
             .collect::<Vec<_>>()
     }
 
-    /// Returns the grid as a tuple of (x, y)
+    /// Returns the grid as a tuple of (x, y, v) as float
+    /// x, y as positions and v as the value of the cell
+    ///
+    /// ```.rust
+    /// let mut grid = das_grid::Grid::new((3, 2), (1., 1.), 1);
+    /// for (x, y, v) in grid.enumerate_with_valuef() {
+    ///     println!("x {} y {} v {}", x, y, v);
+    /// }
+    /// ```
+    pub fn enumerate_with_valuef(&self) -> Vec<(f32, f32, &T)> {
+        let mut x = 0;
+        let mut y = 0;
+        let (rows, _) = self.frame_size;
+        self.cells
+            .iter()
+            .enumerate()
+            .map(|(idx, v)| {
+                if idx as i32 % rows == 0 && idx > 1 {
+                    y = 0;
+                    x += 1;
+                }
+                let res = (x as f32, y as f32, v);
+                y += 1;
+                res
+            })
+            .collect::<Vec<_>>()
+    }
+
+    /// Returns the grid as a tuple of (x, y) as integer
     ///
     /// ```.rust
     /// let mut grid = das_grid::Grid::new((3, 2), (1., 1.), 1);
@@ -715,6 +743,33 @@ impl<T: Copy> Grid<T> {
                     x += 1;
                 }
                 let res = (x, y);
+                y += 1;
+                res
+            })
+            .collect::<Vec<_>>()
+    }
+
+    /// Returns the grid as a tuple of (x, y) as float
+    ///
+    /// ```.rust
+    /// let mut grid = das_grid::Grid::new((3, 2), (1., 1.), 1);
+    /// for (x, y) in grid.enumerate() {
+    ///     println!("x {} y {}", x, y);
+    /// }
+    /// ```
+    pub fn enumeratef(&self) -> Vec<(f32, f32)> {
+        let mut x = 0;
+        let mut y = 0;
+        let (rows, _) = self.frame_size;
+        self.cells
+            .iter()
+            .enumerate()
+            .map(|(idx, _)| {
+                if idx as i32 % rows == 0 && idx > 1 {
+                    y = 0;
+                    x += 1;
+                }
+                let res = (x as f32, y as f32);
                 y += 1;
                 res
             })
