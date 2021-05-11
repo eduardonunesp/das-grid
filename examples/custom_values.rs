@@ -10,7 +10,7 @@ enum Pawn {
     Player,
 }
 
-fn main() -> Result<(), das_grid::GridErr> {
+fn main() -> das_grid::Result {
     // Initialize empty grid
     let mut g: das_grid::Grid<Pawn> = das_grid::Grid::new((2, 2), (32., 32.), Pawn::None);
 

@@ -64,11 +64,10 @@ let mut g: das_grid::Grid<Pawn> = das_grid::Grid::new((10, 10), (1., 1.), Pawn::
 g.set((5, 5), &Pawn::Player);
 
 // Move the player to right
-if let Ok(()) = g.mov_to((5, 5), das_grid::MoveDirection::Right) {
+if let Ok((x, y)) = g.mov_to((5, 5), das_grid::MoveDirection::Right) {
     // "The pawn on 6,5 is Player"
-    println!("The pawn on 6,5 is {}", g.get((6, 5)).unwrap());
+    println!("The pawn on 6,5 is {}", g.get((x, y)).unwrap());
 }
-
 ```
 
 > The `mov_to` function can returns `Result<(), Err>` if the attept of move is out of the bounds of the grid
@@ -120,5 +119,30 @@ SOFTWARE.
 ```
 */
 
+#![allow(warnings, unused)]
+
 mod grid;
 pub use grid::*;
+
+use std::{
+    fmt::{self, Display},
+    ops::{Index, IndexMut},
+    result,
+};
+
+use parse_display_derive::Display;
+
+/// A specialized [`Result`](std::result::Result) type for DasGrid.
+pub type Result<T = ()> = result::Result<T, DasGridError>;
+
+#[derive(Debug, Clone, PartialEq, Eq, Display)]
+pub enum DasGridError {
+    #[display("value is out of the grid rows and cols")]
+    OutOfGrid,
+    #[display("failed to meet the rule requirements")]
+    RuleFailed,
+    #[display("the subgrid cols or rows is greater than the parent grid")]
+    SubgridOverflow,
+    #[display("the value isn't found at the position")]
+    ValueNotFound,
+}

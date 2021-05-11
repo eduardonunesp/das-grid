@@ -1,29 +1,20 @@
 #![allow(warnings, unused)]
 #[macro_use]
 use pretty_assertions::{assert_eq, assert_ne};
+use parse_display_derive::Display;
 
-use std::{
-    borrow::BorrowMut,
-    fmt::{self},
-};
+use std::{borrow::BorrowMut, fmt};
 
-use crate::{Grid, GridErr, MoveDirection};
+use crate::MoveDirection;
+use crate::Result;
+use crate::{DasGridError, Grid};
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Display)]
 enum Pawn {
+    #[display("None")]
     None,
+    #[display("Player")]
     Player,
-    Enemy,
-}
-
-impl fmt::Display for Pawn {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            Pawn::None => write!(f, "None"),
-            Pawn::Player => write!(f, "Player"),
-            Pawn::Enemy => write!(f, "Enemy"),
-        }
-    }
 }
 
 #[test]
@@ -42,7 +33,6 @@ fn test_create_grid_with_str() {
 fn test_create_grid_with_enum() {
     let mut g: Grid<Pawn> = Grid::new((10, 10), (1., 1.), Pawn::None);
     assert_eq!(g.get((0, 0)).unwrap(), &Pawn::None);
-
     g.set((5, 5), &Pawn::Player);
     assert_eq!(g.mov_to((5, 5), MoveDirection::Right).is_ok(), true);
 }
@@ -99,44 +89,44 @@ fn test_move_to() {
     let mut g = Grid::new((2, 2), (1., 1.), 0);
     g.set((0, 0), &1);
 
-    let ret = g.mov_to((0, 0), MoveDirection::Right);
+    let ret = g.mov_to((0, 0), MoveDirection::Down);
     assert_eq!(g.get((0, 1)).unwrap(), &1);
     assert_eq!(ret.is_ok(), true);
 
-    let ret = g.mov_to((0, 1), MoveDirection::Right);
-    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
+    let ret = g.mov_to((0, 1), MoveDirection::Down);
+    assert_eq!(ret.unwrap_err(), DasGridError::OutOfGrid);
 
-    let ret = g.mov_to((0, 1), MoveDirection::Left);
+    let ret = g.mov_to((0, 1), MoveDirection::Up);
     assert_eq!(g.get((0, 0)).unwrap(), &1);
 
-    let ret = g.mov_to((0, 0), MoveDirection::Left);
-    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
+    let ret = g.mov_to((0, 0), MoveDirection::Up);
+    assert_eq!(ret.unwrap_err(), DasGridError::OutOfGrid);
 
     let ret = g.mov_to((0, 0), MoveDirection::Up);
-    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
+    assert_eq!(ret.unwrap_err(), DasGridError::OutOfGrid);
 
     let ret = g.mov_to((0, 0), MoveDirection::Down);
     assert_eq!(ret.is_ok(), true);
 
-    let ret = g.mov_to((1, 0), MoveDirection::Down);
-    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
-
     let ret = g.mov_to((1, 0), MoveDirection::Right);
+    assert_eq!(ret.unwrap_err(), DasGridError::OutOfGrid);
+
+    let ret = g.mov_to((1, 0), MoveDirection::Down);
     assert_eq!(ret.is_ok(), true);
 
     let ret = g.mov_to((1, 1), MoveDirection::Right);
-    assert_eq!(ret.unwrap_err(), GridErr::OutOfGrid);
+    assert_eq!(ret.unwrap_err(), DasGridError::OutOfGrid);
 }
 
 #[test]
 fn test_enumerate() {
-    let mut grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 0);
+    let mut grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 1);
 
-    let mut result: Vec<(i32, i32)> = vec![];
-    for xy in grid.enumerate() {
-        result.push(xy)
+    let mut result: Vec<(i32, i32, &i32)> = vec![];
+    for xy in grid.enumerate_with_value() {
+        result.push(xy);
     }
-    assert_eq!(result, [(0, 0), (0, 1), (1, 0), (1, 1)])
+    assert_eq!(result, [(0, 0, &1), (0, 1, &1), (1, 0, &1), (1, 1, &1)])
 }
 
 #[test]
@@ -156,9 +146,9 @@ fn test_set_with_rules() {
     let mut grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 0);
     assert_eq!(grid.set((0, 1), &1).is_ok(), true);
 
-    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
+    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result {
         if *value == 1 {
-            return Err(GridErr::RuleFailed);
+            return Err(DasGridError::RuleFailed);
         }
         Ok(())
     };
@@ -167,7 +157,7 @@ fn test_set_with_rules() {
         grid.set_with_rules((0, 1), &1, vec![rule_not_1])
             .err()
             .unwrap(),
-        GridErr::RuleFailed
+        DasGridError::RuleFailed
     );
 }
 
@@ -187,9 +177,9 @@ fn test_stamp_subgrid_with_rules_1() {
     let mut grid: Grid<i32> = Grid::new((10, 10), (1., 1.), 1);
     let sub_grid: Grid<i32> = Grid::new((2, 2), (1., 1.), 1);
 
-    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
+    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result {
         if *value == 1 {
-            return Err(GridErr::RuleFailed);
+            return Err(DasGridError::RuleFailed);
         }
         Ok(())
     };
@@ -228,14 +218,14 @@ fn test_mov_to_with_rules() {
     let mut g = Grid::new((2, 2), (1., 1.), 0);
     g.set((0, 1), &1);
 
-    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result<(), GridErr> {
+    let rule_not_1 = |_: (i32, i32), value: &i32| -> Result {
         if *value == 1 {
-            return Err(GridErr::RuleFailed);
+            return Err(DasGridError::RuleFailed);
         }
         Ok(())
     };
 
-    let ret = g.mov_to_with_rules((0, 0), MoveDirection::Right, vec![rule_not_1]);
+    let ret = g.mov_to_with_rules((0, 0), MoveDirection::Down, vec![rule_not_1]);
     assert_eq!(ret.is_err(), true);
 }
 
@@ -248,12 +238,3 @@ fn test_fill_subgrid() {
     assert_eq!(grid.get((2, 1)).unwrap(), &0);
     assert_eq!(grid.get((2, 2)).unwrap(), &0);
 }
-
-// #[test]
-// fn test_generic() {
-//     let mut g = Grid::new(3, 3, 0);
-//     g.set((0, 1), &1);
-//     g.debug();
-//     println!("{:?}", g.mov_to((0, 1), MoveDirection::Right));
-//     g.debug();
-// }
