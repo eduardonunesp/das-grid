@@ -206,7 +206,7 @@ impl<T: Copy> Grid<T> {
     /// assert_eq!(grid.get((6, 5)).unwrap(), &1);
     /// assert_eq!(grid.get((6, 6)).unwrap(), &1);
     /// ```
-    pub fn stamp_subgrid(&mut self, dst: (i32, i32), sub_grid: Grid<T>) -> Result {
+    pub fn stamp_subgrid(&mut self, dst: (i32, i32), sub_grid: &Grid<T>) -> Result {
         self.check_grid_overflow(&sub_grid)?;
         self.check_grid_bounds(dst)?;
         let (xx, yy) = dst;
@@ -214,7 +214,7 @@ impl<T: Copy> Grid<T> {
         for (x, y, _) in sub_grid.enumerate_with_value() {
             if let Ok(subv) = sub_grid.get((x, y)) {
                 // Sum origin of subgrid and dest cells
-                let dest = (xx + x, yy + y);
+                let dest = (yy + y, xx + x);
 
                 // Ok if the subgrid bleeds
                 match self.set(dest, &subv) {

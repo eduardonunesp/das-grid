@@ -1,3 +1,5 @@
+use std::thread::current;
+
 use tetra::{
     graphics::{
         self,
@@ -15,10 +17,15 @@ struct Player {
     pos: (i32, i32),
 }
 
+struct Piece {
+    grid: Grid<i32>,
+}
+
 struct GameState {
     rect: Mesh,
     grid: Grid<i32>,
     player: Player,
+    current_piece: Piece,
 }
 
 impl GameState {
@@ -34,6 +41,16 @@ impl GameState {
         grid.set(player.pos, &1)
             .expect("set value player at x = 5 and y = 5");
 
+        let current_piece = Piece {
+            grid: Grid::new_from_vector(
+                (4, 4),
+                (32., 32.),
+                vec![0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
+            ),
+        };
+
+        grid.stamp_subgrid((1, 1), &current_piece.grid);
+
         // Rect used to represent grid cells
         let rect = Mesh::rectangle(
             ctx,
@@ -42,7 +59,12 @@ impl GameState {
         )?;
 
         // Nice lets start
-        Ok(Self { rect, grid, player })
+        Ok(Self {
+            rect,
+            grid,
+            player,
+            current_piece,
+        })
     }
 
     fn draw_grid(&mut self, ctx: &mut Context) {
