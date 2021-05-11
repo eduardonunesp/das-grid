@@ -267,7 +267,7 @@ impl<T: Copy> Grid<T> {
         for (x, y, _) in sub_grid.enumerate_with_value() {
             if let Ok(subv) = sub_grid.get((x, y)) {
                 // Sum origin of subgrid and dest cells
-                let dest = (xx + x, yy + y);
+                let dest = (yy + y, xx + x);
 
                 // Get the destiny
                 let destv = self.get(dest)?;
