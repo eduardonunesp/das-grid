@@ -1,6 +1,6 @@
 # Das Grid
 
-[![<ORG_NAME>](https://circleci.com/gh/eduardonunesp/das-grid.svg?style=svg)](_)
+[![Test](https://github.com/eduardonunesp/das-grid/actions/workflows/test.yml/badge.svg)](https://github.com/eduardonunesp/das-grid/actions/workflows/test.yml)
 
 **Das Grid** is a 2D grid library which serves as fundamental building block for any 2D game built on the concept of grid
 
