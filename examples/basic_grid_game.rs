@@ -1,60 +1,56 @@
-use tetra::{
-    graphics::{
-        self,
-        mesh::{Mesh, ShapeStyle},
-        Color, Rectangle,
-    },
-    input::{self, Key},
-    math::Vec2,
-    window, Context, ContextBuilder, State,
-};
+use ggez::event::{self, EventHandler};
+use ggez::graphics::{self, Color};
+use ggez::{Context, ContextBuilder, GameResult};
 
 use das_grid::Grid;
 
 const SQR_RECT_SIZE: f32 = 32.;
 
 struct GameState {
-    rect: Mesh,
     grid: Grid<i32>,
 }
 
 impl GameState {
-    fn new(ctx: &mut Context) -> tetra::Result<GameState> {
-        Ok(Self {
-            rect: Mesh::rectangle(
-                ctx,
-                ShapeStyle::Stroke(1.0),
-                Rectangle::new(0., 0., SQR_RECT_SIZE, SQR_RECT_SIZE),
-            )?,
-            grid: Grid::new((20, 10), (32., 32.), 0),
-        })
+    pub fn new(_ctx: &mut Context) -> GameState {
+        // Load/create resources such as images here.
+        GameState {
+            grid: Grid::new((10, 10), (SQR_RECT_SIZE, SQR_RECT_SIZE), 0),
+        }
     }
 }
 
-impl State for GameState {
-    fn draw(&mut self, ctx: &mut Context) -> tetra::Result {
-        // Cornflower blue, as is tradition
-        graphics::clear(ctx, Color::BLACK);
+impl EventHandler for GameState {
+    fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        Ok(())
+    }
+
+    fn draw(&mut self, ctx: &mut Context) -> GameResult {
+        let mut canvas = graphics::Canvas::from_frame(ctx, Color::BLACK);
 
         for (x, y) in self.grid.enumerate_to_cell_size() {
-            let dest = Vec2::new(128. + x as f32, 64. + y as f32);
-            self.rect.draw(ctx, dest);
+            canvas.draw(
+                &graphics::Quad,
+                graphics::DrawParam::new()
+                    .dest_rect([x, y, SQR_RECT_SIZE, SQR_RECT_SIZE].into())
+                    .color(Color::BLUE),
+            );
         }
 
-        Ok(())
-    }
-
-    fn update(&mut self, ctx: &mut Context) -> tetra::Result {
-        if input::is_key_down(ctx, Key::Escape) {
-            window::quit(ctx);
-        }
-
-        Ok(())
+        canvas.finish(ctx)
     }
 }
+fn main() {
+    // Make a Context.
+    let (mut ctx, event_loop) = ContextBuilder::new("bgg", "Basic Grid Game")
+        .window_mode(ggez::conf::WindowMode::default().dimensions(800.0, 600.0))
+        .build()
+        .expect("aieee, could not create ggez context!");
 
-fn main() -> tetra::Result {
-    ContextBuilder::new("Basic Grid Game", 600, 800)
-        .build()?
-        .run(GameState::new)
+    // Create an instance of your event handler.
+    // Usually, you should provide it with the Context object to
+    // use when setting your game up.
+    let my_game = GameState::new(&mut ctx);
+
+    // Run!
+    event::run(ctx, event_loop, my_game);
 }

@@ -126,6 +126,7 @@ use std::{
 };
 
 use parse_display_derive::Display;
+use thiserror::*;
 
 /// Err represents the errors that can happen on the Das Grid module
 ///
@@ -135,13 +136,13 @@ use parse_display_derive::Display;
 /// GridErr::RuleFailed when some rule failed to applied
 ///
 /// GridErr::SubgridOverflow when the subgrid 0x0 is greater than the parent grid
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum GridErr {
-    #[display("value is out of the grid rows and cols")]
+    #[error("value is out of the grid rows and cols")]
     OutOfGrid,
-    #[display("failed to meet the rule requirements")]
+    #[error("failed to meet the rule requirements")]
     RuleFailed,
-    #[display("the subgrid cols or rows is greater than the parent grid")]
+    #[error("the subgrid cols or rows is greater than the parent grid")]
     SubgridOverflow,
 }
 

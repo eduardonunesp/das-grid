@@ -59,6 +59,7 @@ fn test_iterate_on_grid() {
     let g = Grid::new((10, 10), (1., 1.), 1);
     assert_eq!(g.into_iter().sum::<i32>(), 100);
 }
+
 #[test]
 fn test_get_pos() {
     let g = Grid::new((2, 2), (1., 1.), 1);
@@ -248,12 +249,3 @@ fn test_fill_subgrid() {
     assert_eq!(grid.get((2, 1)).unwrap(), &0);
     assert_eq!(grid.get((2, 2)).unwrap(), &0);
 }
-
-// #[test]
-// fn test_generic() {
-//     let mut g = Grid::new(3, 3, 0);
-//     g.set((0, 1), &1);
-//     g.debug();
-//     println!("{:?}", g.mov_to((0, 1), MoveDirection::Right));
-//     g.debug();
-// }

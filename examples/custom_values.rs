@@ -12,7 +12,7 @@ enum Pawn {
 
 fn main() -> Result<(), das_grid::GridErr> {
     // Initialize empty grid
-    let mut g: das_grid::Grid<Pawn> = das_grid::Grid::new((2, 2), (32., 32.), Pawn::None);
+    let mut g = das_grid::Grid::new((2, 2), (32., 32.), Pawn::None);
 
     // Set the Player on position 5,5
     g.set((0, 0), &Pawn::Player)?;
