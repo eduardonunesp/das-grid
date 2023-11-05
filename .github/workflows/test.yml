@@ -1,0 +1,34 @@
+name: Test
+
+on:
+  push:
+    branches-ignore:
+      - master
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Get Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
+    - name: Install alsa
+      run: sudo apt-get update; sudo apt-get install --no-install-recommends libasound2-dev
+
+    - name: Install udev
+      run: sudo apt-get update; sudo apt-get install --no-install-recommends libudev-dev
+
+    - name: Run cargo test w/ -D warnings
+      run: cargo test headless -- --test-threads=1
+      env:
+        RUSTFLAGS: "-D warnings"
