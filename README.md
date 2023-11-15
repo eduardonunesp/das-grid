@@ -4,6 +4,8 @@
 
 **Das Grid** is a 2D grid library which serves as fundamental building block for any 2D game built on the concept of grid
 
+<img alt="Screenshot 2023-11-15 at 11 12 33" src="https://github.com/eduardonunesp/das-grid/assets/582516/859c2a73-8e4f-4a3a-b369-889a1d1ca29d">
+
 Famous games built on 2d grid concept:
 
 * Draughts/Checkers
